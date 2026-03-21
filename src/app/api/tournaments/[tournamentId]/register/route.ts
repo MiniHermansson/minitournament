@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth-utils";
+import { requireAuth, isOrganizer } from "@/lib/auth-utils";
 import { updateRegistrationSchema } from "@/lib/validators/tournament";
 import { z } from "zod";
 
@@ -99,7 +99,7 @@ export async function PATCH(
   if (!tournament) {
     return NextResponse.json({ error: "Tournament not found" }, { status: 404 });
   }
-  if (tournament.organizerId !== session!.user.id) {
+  if (!isOrganizer(tournament, session!.user.id)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

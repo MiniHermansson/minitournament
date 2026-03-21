@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { RosterTable } from "@/components/team/roster-table";
@@ -32,6 +33,7 @@ export default function ManageTeamPage() {
   const { data: session } = useSession();
   const [team, setTeam] = useState<TeamData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchTeam = useCallback(async () => {
     const res = await fetch(`/api/teams/${params.teamId}`);
@@ -51,6 +53,19 @@ export default function ManageTeamPage() {
   useEffect(() => {
     if (session) fetchTeam();
   }, [session, fetchTeam]);
+
+  async function handleDeleteTeam() {
+    if (!confirm("Are you sure you want to delete this team? This cannot be undone.")) return;
+    setDeleting(true);
+    const res = await fetch(`/api/teams/${params.teamId}`, { method: "DELETE" });
+    if (res.ok) {
+      router.push("/teams");
+    } else {
+      const data = await res.json();
+      alert(data.error);
+    }
+    setDeleting(false);
+  }
 
   async function handleRemoveMember(memberId: string) {
     const res = await fetch(
@@ -98,6 +113,24 @@ export default function ManageTeamPage() {
         <CardContent>
           <Separator className="mb-4" />
           <AddMemberForm teamId={team.id} onAdded={fetchTeam} />
+        </CardContent>
+      </Card>
+
+      <Card className="border-destructive/30">
+        <CardHeader>
+          <CardTitle className="text-destructive">Danger Zone</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground mb-4">
+            Permanently delete this team. Cannot be done if the team is active in a tournament.
+          </p>
+          <Button
+            variant="destructive"
+            onClick={handleDeleteTeam}
+            disabled={deleting}
+          >
+            {deleting ? "Deleting..." : "Delete Team"}
+          </Button>
         </CardContent>
       </Card>
     </div>

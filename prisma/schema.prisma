@@ -22,8 +22,9 @@ model User {
 
   ownedTeams           Team[]                  @relation("TeamOwner")
   teamMemberships      TeamMember[]
-  organizedTournaments Tournament[]            @relation("TournamentOrganizer")
-  playerSignups        PlayerSignup[]
+  organizedTournaments   Tournament[]            @relation("TournamentOrganizer")
+  coOrganizedTournaments Tournament[]            @relation("TournamentCoOrganizer")
+  playerSignups          PlayerSignup[]
   draftCaptains        DraftCaptain[]
   draftPicks           DraftPick[]
 
@@ -143,7 +144,8 @@ model Tournament {
   description String?          @db.Text
   format      TournamentFormat
   status      TournamentStatus @default(DRAFT)
-  organizerId String
+  organizerId   String
+  coOrganizerId String?
 
   maxTeams Int @default(16)
   minTeams Int @default(2)
@@ -159,6 +161,7 @@ model Tournament {
   teamMode TeamMode @default(PRE_MADE)
 
   organizer     User                     @relation("TournamentOrganizer", fields: [organizerId], references: [id])
+  coOrganizer   User?                    @relation("TournamentCoOrganizer", fields: [coOrganizerId], references: [id])
   registrations TournamentRegistration[]
   playerSignups PlayerSignup[]
   draftState    DraftState?

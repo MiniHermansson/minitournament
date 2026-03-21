@@ -40,6 +40,8 @@ interface TournamentData {
   format: string;
   teamMode: string;
   organizerId: string;
+  coOrganizerId: string | null;
+  coOrganizer: { id: string; name: string | null; email: string } | null;
   maxTeams: number;
   registrations: Registration[];
   playerSignups: PlayerSignup[];
@@ -61,6 +63,10 @@ export default function ManageTournamentPage() {
   const [tournament, setTournament] = useState<TournamentData | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [coOrgEmail, setCoOrgEmail] = useState("");
+  const [coOrgSaving, setCoOrgSaving] = useState(false);
+  const [coOrgError, setCoOrgError] = useState("");
 
   // Format config state (for captains draft — configured after draft)
   const [bestOf, setBestOf] = useState("1");
@@ -75,7 +81,8 @@ export default function ManageTournamentPage() {
       return;
     }
     const data = await res.json();
-    if (data.tournament.organizerId !== session?.user?.id) {
+    const t = data.tournament;
+    if (t.organizerId !== session?.user?.id && t.coOrganizerId !== session?.user?.id) {
       router.push(`/tournaments/${params.tournamentId}`);
       return;
     }
@@ -145,6 +152,39 @@ export default function ManageTournamentPage() {
       }
     );
     if (res.ok) fetchTournament();
+  }
+
+  async function handleSaveCoOrganizer() {
+    setCoOrgSaving(true);
+    setCoOrgError("");
+    const res = await fetch(`/api/tournaments/${params.tournamentId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ coOrganizerEmail: coOrgEmail || null }),
+    });
+    if (res.ok) {
+      setCoOrgEmail("");
+      fetchTournament();
+    } else {
+      const data = await res.json();
+      setCoOrgError(data.error);
+    }
+    setCoOrgSaving(false);
+  }
+
+  async function handleDeleteTournament() {
+    if (!confirm("Are you sure you want to delete this tournament? This cannot be undone.")) return;
+    setDeleting(true);
+    const res = await fetch(`/api/tournaments/${params.tournamentId}`, {
+      method: "DELETE",
+    });
+    if (res.ok) {
+      router.push("/tournaments");
+    } else {
+      const data = await res.json();
+      alert(data.error);
+    }
+    setDeleting(false);
   }
 
   if (loading) {
@@ -475,6 +515,74 @@ export default function ManageTournamentPage() {
                 ))}
               </div>
             )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Co-Organizer */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Co-Organizer</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {tournament.coOrganizer ? (
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium">{tournament.coOrganizer.name}</p>
+                <p className="text-xs text-muted-foreground">{tournament.coOrganizer.email}</p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setCoOrgEmail("");
+                  handleSaveCoOrganizer();
+                }}
+              >
+                Remove
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="co-organizer@email.com"
+                  type="email"
+                  value={coOrgEmail}
+                  onChange={(e) => setCoOrgEmail(e.target.value)}
+                />
+                <Button
+                  onClick={handleSaveCoOrganizer}
+                  disabled={coOrgSaving || !coOrgEmail.trim()}
+                >
+                  {coOrgSaving ? "Saving..." : "Add"}
+                </Button>
+              </div>
+              {coOrgError && (
+                <p className="text-sm text-destructive">{coOrgError}</p>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Delete Tournament */}
+      {(tournament.status === "DRAFT" || tournament.status === "CANCELLED") && (
+        <Card className="border-destructive/30">
+          <CardHeader>
+            <CardTitle className="text-destructive">Danger Zone</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Permanently delete this tournament and all its data. This action cannot be undone.
+            </p>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteTournament}
+              disabled={deleting}
+            >
+              {deleting ? "Deleting..." : "Delete Tournament"}
+            </Button>
           </CardContent>
         </Card>
       )}

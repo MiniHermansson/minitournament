@@ -33,6 +33,8 @@ export default function CreateTournamentPage() {
   const [format, setFormat] = useState("SINGLE_ELIMINATION");
   const [teamMode, setTeamMode] = useState("PRE_MADE");
 
+  const [coOrganizerEmail, setCoOrganizerEmail] = useState("");
+
   // Step 2: Settings
   const [maxTeams, setMaxTeams] = useState(16);
   const [minTeams, setMinTeams] = useState(2);
@@ -80,6 +82,7 @@ export default function CreateTournamentPage() {
         description: description || undefined,
         format,
         teamMode,
+        coOrganizerEmail: coOrganizerEmail || undefined,
         maxTeams,
         minTeams,
         teamSize,
@@ -190,6 +193,20 @@ export default function CreateTournamentPage() {
                     </label>
                   ))}
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="co-org">Co-Organizer Email (optional)</Label>
+                <Input
+                  id="co-org"
+                  type="email"
+                  placeholder="co-organizer@email.com"
+                  value={coOrganizerEmail}
+                  onChange={(e) => setCoOrganizerEmail(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  They will have the same permissions as you to manage this tournament.
+                </p>
               </div>
 
               <Button

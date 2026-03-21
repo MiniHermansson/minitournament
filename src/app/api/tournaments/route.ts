@@ -45,6 +45,20 @@ export async function POST(req: Request) {
     const body = await req.json();
     const data = createTournamentSchema.parse(body);
 
+    let coOrganizerId: string | null = null;
+    if (body.coOrganizerEmail) {
+      const coOrg = await prisma.user.findUnique({
+        where: { email: body.coOrganizerEmail },
+      });
+      if (!coOrg) {
+        return NextResponse.json({ error: "Co-organizer user not found" }, { status: 404 });
+      }
+      if (coOrg.id === session!.user.id) {
+        return NextResponse.json({ error: "Co-organizer cannot be the same as the organizer" }, { status: 400 });
+      }
+      coOrganizerId = coOrg.id;
+    }
+
     const tournament = await prisma.tournament.create({
       data: {
         name: data.name,
@@ -60,6 +74,7 @@ export async function POST(req: Request) {
         endDate: data.endDate ? new Date(data.endDate) : null,
         formatConfig: (data.formatConfig ?? null) as any,
         organizerId: session!.user.id,
+        coOrganizerId,
       },
     });
 

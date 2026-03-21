@@ -86,6 +86,20 @@ export async function DELETE(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  const activeRegistration = await prisma.tournamentRegistration.findFirst({
+    where: {
+      teamId,
+      status: "ACCEPTED",
+      tournament: { status: { in: ["IN_PROGRESS", "DRAFTING"] } },
+    },
+  });
+  if (activeRegistration) {
+    return NextResponse.json(
+      { error: "Cannot delete team while active in a tournament" },
+      { status: 400 }
+    );
+  }
+
   await prisma.team.delete({ where: { id: teamId } });
 
   return NextResponse.json({ success: true });

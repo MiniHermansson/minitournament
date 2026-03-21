@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 
 interface TournamentInfo {
   organizerId: string;
+  coOrganizerId: string | null;
   name: string;
   status: string;
   format: string;
@@ -42,7 +43,7 @@ export default function GroupsPage() {
     fetchData();
   }, [fetchData]);
 
-  const isOrganizer = session?.user?.id === tournament?.organizerId;
+  const isOrganizer = session?.user?.id === tournament?.organizerId || session?.user?.id === tournament?.coOrganizerId;
   const isGroupPlayoff = tournament?.format === "GROUP_STAGE_PLAYOFF";
 
   const allGroupMatchesComplete = groups.every((g: any) =>

@@ -51,7 +51,7 @@ export default async function TournamentDetailPage({
 
   if (!tournament) notFound();
 
-  const isOrganizer = session?.user?.id === tournament.organizerId;
+  const isOrganizer = session?.user?.id === tournament.organizerId || session?.user?.id === tournament.coOrganizerId;
   const userTeams = session
     ? await prisma.team.findMany({
         where: { ownerId: session.user.id },

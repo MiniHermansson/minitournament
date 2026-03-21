@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth-utils";
+import { requireAuth, isOrganizer } from "@/lib/auth-utils";
 
 export const runtime = "nodejs";
 
@@ -20,7 +20,7 @@ export async function POST(
   if (!tournament) {
     return NextResponse.json({ error: "Tournament not found" }, { status: 404 });
   }
-  if (tournament.organizerId !== session!.user.id) {
+  if (!isOrganizer(tournament, session!.user.id)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   if (tournament.status !== "DRAFTING") {

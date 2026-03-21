@@ -7,6 +7,7 @@ import { BracketView } from "@/components/tournament/bracket-view";
 
 interface TournamentInfo {
   organizerId: string;
+  coOrganizerId: string | null;
   name: string;
   status: string;
 }
@@ -47,7 +48,7 @@ export default function BracketPage() {
     );
   }
 
-  const isOrganizer = session?.user?.id === tournament?.organizerId;
+  const isOrganizer = session?.user?.id === tournament?.organizerId || session?.user?.id === tournament?.coOrganizerId;
 
   return (
     <div className="container mx-auto px-4 py-8">
