@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -62,7 +63,7 @@ export default function ManageTeamPage() {
       router.push("/teams");
     } else {
       const data = await res.json();
-      alert(data.error);
+      toast.error(data.error);
     }
     setDeleting(false);
   }

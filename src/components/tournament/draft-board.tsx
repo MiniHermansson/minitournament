@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -98,7 +99,7 @@ export function DraftBoard({
       onPickMade();
     } else {
       const data = await res.json();
-      alert(data.error);
+      toast.error(data.error);
     }
     setPicking(false);
   }
@@ -115,7 +116,7 @@ export function DraftBoard({
       onFinalized();
     } else {
       const data = await res.json();
-      alert(data.error);
+      toast.error(data.error);
     }
     setFinalizing(false);
   }

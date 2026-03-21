@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -88,7 +89,7 @@ export default function DraftPage() {
 
   async function startDraft() {
     if (captainAssignments.size !== teamCount) {
-      alert(`Please assign all ${teamCount} captains.`);
+      toast.error(`Please assign all ${teamCount} captains.`);
       return;
     }
     setStarting(true);
@@ -107,7 +108,7 @@ export default function DraftPage() {
       fetchDraft();
     } else {
       const data = await res.json();
-      alert(data.error);
+      toast.error(data.error);
     }
     setStarting(false);
   }

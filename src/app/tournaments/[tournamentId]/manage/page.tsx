@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -137,7 +138,7 @@ export default function ManageTournamentPage() {
       router.push(`/tournaments/${params.tournamentId}/bracket`);
     } else {
       const data = await res.json();
-      alert(data.error);
+      toast.error(data.error);
     }
     setGenerating(false);
   }
@@ -182,7 +183,7 @@ export default function ManageTournamentPage() {
       router.push("/tournaments");
     } else {
       const data = await res.json();
-      alert(data.error);
+      toast.error(data.error);
     }
     setDeleting(false);
   }
