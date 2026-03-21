@@ -107,6 +107,9 @@ export function Navbar() {
                 <DropdownMenuItem>
                   <Link href="/dashboard" className="w-full">Dashboard</Link>
                 </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Link href="/settings" className="w-full">Settings</Link>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   className="cursor-pointer"
@@ -148,17 +151,30 @@ export function Navbar() {
               </Link>
             ))}
             {session?.user && (
-              <Link
-                href="/dashboard"
-                onClick={() => setMobileOpen(false)}
-                className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-muted/50 ${
-                  pathname === "/dashboard"
-                    ? "text-foreground bg-muted/30"
-                    : "text-muted-foreground"
-                }`}
-              >
-                Dashboard
-              </Link>
+              <>
+                <Link
+                  href="/dashboard"
+                  onClick={() => setMobileOpen(false)}
+                  className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-muted/50 ${
+                    pathname === "/dashboard"
+                      ? "text-foreground bg-muted/30"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  Dashboard
+                </Link>
+                <Link
+                  href="/settings"
+                  onClick={() => setMobileOpen(false)}
+                  className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-muted/50 ${
+                    pathname === "/settings"
+                      ? "text-foreground bg-muted/30"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  Settings
+                </Link>
+              </>
             )}
             {!session?.user && status !== "loading" && (
               <div className="flex gap-2 pt-2 border-t border-border/40">

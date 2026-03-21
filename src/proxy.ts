@@ -18,6 +18,7 @@ export function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     "/dashboard",
+    "/settings",
     "/tournaments/new",
     "/tournaments/:path*/manage",
     "/tournaments/:path*/draft",

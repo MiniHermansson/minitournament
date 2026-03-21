@@ -58,20 +58,31 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
   },
   callbacks: {
-    async jwt({ token, user, account, profile }) {
+    async jwt({ token, user, account, trigger }) {
       if (account && user) {
-        // OAuth sign-in: user was just created/linked by the adapter
         token.id = user.id;
       } else if (user) {
-        // Credentials sign-in
         token.id = user.id;
       }
-      // On subsequent requests, token.id is already set
+      // Refresh token data when session.update() is called from client
+      if (trigger === "update" && token.id) {
+        const freshUser = await prisma.user.findUnique({
+          where: { id: token.id as string },
+          select: { name: true, image: true, email: true },
+        });
+        if (freshUser) {
+          token.name = freshUser.name;
+          token.picture = freshUser.image;
+          token.email = freshUser.email;
+        }
+      }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
+        session.user.name = token.name as string | null;
+        session.user.image = token.picture as string | null;
       }
       return session;
     },
