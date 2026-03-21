@@ -10,7 +10,7 @@ export default async function TournamentsPage() {
   const tournaments = await prisma.tournament.findMany({
     include: {
       organizer: { select: { id: true, name: true, image: true } },
-      _count: { select: { registrations: true } },
+      _count: { select: { registrations: true, playerSignups: true } },
     },
     orderBy: { createdAt: "desc" },
     take: 50,

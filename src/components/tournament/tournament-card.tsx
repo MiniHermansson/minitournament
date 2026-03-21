@@ -24,10 +24,11 @@ interface TournamentCardProps {
     name: string;
     format: string;
     status: string;
+    teamMode: string;
     maxTeams: number;
     startDate: string | null;
     organizer: { name: string | null };
-    _count: { registrations: number };
+    _count: { registrations: number; playerSignups: number };
   };
 }
 
@@ -49,7 +50,9 @@ export function TournamentCard({ tournament }: TournamentCardProps) {
           <div className="flex items-center justify-between text-sm text-muted-foreground">
             <span>{formatLabels[tournament.format] ?? tournament.format}</span>
             <span>
-              {tournament._count.registrations}/{tournament.maxTeams} teams
+              {tournament.teamMode === "CAPTAINS_DRAFT"
+                ? `${tournament._count.playerSignups} players`
+                : `${tournament._count.registrations}/${tournament.maxTeams} teams`}
             </span>
           </div>
           <div className="flex items-center justify-between text-xs text-muted-foreground">
