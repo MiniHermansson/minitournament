@@ -27,7 +27,13 @@ export async function GET(
         },
         orderBy: { createdAt: "asc" },
       },
-      _count: { select: { registrations: true, matches: true } },
+      playerSignups: {
+        include: {
+          user: { select: { id: true, name: true, image: true } },
+        },
+        orderBy: { createdAt: "asc" },
+      },
+      _count: { select: { registrations: true, matches: true, playerSignups: true } },
     },
   });
 
@@ -64,7 +70,8 @@ export async function PATCH(
     if (body.status) {
       const validTransitions: Record<string, string[]> = {
         DRAFT: ["REGISTRATION", "CANCELLED"],
-        REGISTRATION: ["IN_PROGRESS", "DRAFT", "CANCELLED"],
+        REGISTRATION: ["IN_PROGRESS", "DRAFTING", "DRAFT", "CANCELLED"],
+        DRAFTING: ["REGISTRATION", "CANCELLED"],
         IN_PROGRESS: ["COMPLETED", "CANCELLED"],
         COMPLETED: [],
         CANCELLED: ["DRAFT"],

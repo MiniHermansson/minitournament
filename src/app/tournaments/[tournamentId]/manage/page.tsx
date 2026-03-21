@@ -3,10 +3,10 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { StatusBadge } from "@/components/tournament/status-badge";
 
 interface Registration {
@@ -20,21 +20,33 @@ interface Registration {
   };
 }
 
+interface PlayerSignup {
+  id: string;
+  userId: string;
+  mainRole: string;
+  secondaryRole: string | null;
+  wantsCaptain: boolean;
+  opGgLink: string | null;
+  discordName: string;
+  user: { id: string; name: string | null; image: string | null };
+}
+
 interface TournamentData {
   id: string;
   name: string;
   status: string;
   format: string;
+  teamMode: string;
   organizerId: string;
   maxTeams: number;
   registrations: Registration[];
+  playerSignups: PlayerSignup[];
 }
 
 const statusTransitions: Record<string, { label: string; next: string }[]> = {
   DRAFT: [{ label: "Open Registration", next: "REGISTRATION" }],
-  REGISTRATION: [
-    { label: "Back to Draft", next: "DRAFT" },
-  ],
+  REGISTRATION: [{ label: "Back to Draft", next: "DRAFT" }],
+  DRAFTING: [{ label: "Back to Registration", next: "REGISTRATION" }],
   IN_PROGRESS: [{ label: "Complete Tournament", next: "COMPLETED" }],
   COMPLETED: [],
   CANCELLED: [{ label: "Reopen as Draft", next: "DRAFT" }],
@@ -116,17 +128,27 @@ export default function ManageTournamentPage() {
 
   if (!tournament) return null;
 
+  const isCaptainsDraft = tournament.teamMode === "CAPTAINS_DRAFT";
   const transitions = statusTransitions[tournament.status] ?? [];
+  const acceptedTeams = tournament.registrations.filter((r) => r.status === "ACCEPTED").length;
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-3xl">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold mb-1">{tournament.name}</h1>
-          <StatusBadge status={tournament.status} />
+          <div className="flex gap-2">
+            <StatusBadge status={tournament.status} />
+            {isCaptainsDraft && (
+              <Badge variant="outline" className="bg-purple-500/15 text-purple-400 border-purple-500/30">
+                Captains Draft
+              </Badge>
+            )}
+          </div>
         </div>
       </div>
 
+      {/* Status transitions */}
       {transitions.length > 0 && (
         <Card className="mb-6">
           <CardHeader>
@@ -156,7 +178,44 @@ export default function ManageTournamentPage() {
         </Card>
       )}
 
-      {tournament.status === "REGISTRATION" && (
+      {/* Captains Draft: Start Draft button */}
+      {isCaptainsDraft && tournament.status === "REGISTRATION" && (
+        <Card className="mb-6 border-primary/30">
+          <CardHeader>
+            <CardTitle>Captains Draft</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              {tournament.playerSignups.length} players signed up.
+              {tournament.playerSignups.length < 10
+                ? " You need at least 10 players to form 2 teams."
+                : ` You can form ${Math.floor(tournament.playerSignups.length / 5)} teams.`}
+            </p>
+            <Link href={`/tournaments/${params.tournamentId}/draft`}>
+              <Button disabled={tournament.playerSignups.length < 10}>
+                Start Draft
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Captains Draft: Link to draft board when DRAFTING */}
+      {isCaptainsDraft && tournament.status === "DRAFTING" && (
+        <Card className="mb-6 border-primary/30">
+          <CardHeader>
+            <CardTitle>Draft in Progress</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Link href={`/tournaments/${params.tournamentId}/draft`}>
+              <Button>Go to Draft Board</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Pre-made teams: Generate bracket */}
+      {!isCaptainsDraft && tournament.status === "REGISTRATION" && (
         <Card className="mb-6 border-primary/30">
           <CardHeader>
             <CardTitle>Start Tournament</CardTitle>
@@ -164,16 +223,11 @@ export default function ManageTournamentPage() {
           <CardContent>
             <p className="text-sm text-muted-foreground mb-4">
               Generate the bracket/schedule and start the tournament.
-              {tournament.registrations.filter((r: Registration) => r.status === "ACCEPTED").length < 2
-                ? " You need at least 2 accepted teams."
-                : ""}
+              {acceptedTeams < 2 ? " You need at least 2 accepted teams." : ""}
             </p>
             <Button
               onClick={handleGenerateBracket}
-              disabled={
-                generating ||
-                tournament.registrations.filter((r: Registration) => r.status === "ACCEPTED").length < 2
-              }
+              disabled={generating || acceptedTeams < 2}
             >
               {generating ? "Generating..." : "Generate Bracket & Start"}
             </Button>
@@ -181,74 +235,157 @@ export default function ManageTournamentPage() {
         </Card>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            Registrations ({tournament.registrations.length}/{tournament.maxTeams})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {tournament.registrations.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">
-              No registrations yet.
+      {/* Generate bracket after draft is finalized (teams have been created) */}
+      {isCaptainsDraft && tournament.status === "REGISTRATION" && acceptedTeams >= 2 && (
+        <Card className="mb-6 border-green-500/30">
+          <CardHeader>
+            <CardTitle>Draft Complete — Start Tournament</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              {acceptedTeams} teams created from the draft. Generate the bracket to start!
             </p>
-          ) : (
-            <div className="space-y-3">
-              {tournament.registrations.map((reg) => (
-                <div
-                  key={reg.id}
-                  className="flex items-center justify-between rounded-lg border p-3"
-                >
-                  <div className="flex items-center gap-3">
+            <Button onClick={handleGenerateBracket} disabled={generating}>
+              {generating ? "Generating..." : "Generate Bracket & Start"}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Player signups list (captains draft) */}
+      {isCaptainsDraft && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>
+              Player Signups ({tournament.playerSignups.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {tournament.playerSignups.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No players signed up yet.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {tournament.playerSignups.map((signup) => (
+                  <div
+                    key={signup.id}
+                    className="flex items-center justify-between rounded-lg border p-3"
+                  >
                     <div>
                       <p className="text-sm font-medium">
-                        {reg.team.name}{" "}
-                        <span className="text-muted-foreground">
-                          [{reg.team.tag}]
+                        {signup.user.name ?? "Unknown"}
+                        <span className="text-muted-foreground ml-2 text-xs">
+                          {signup.discordName}
                         </span>
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {reg.team._count.members} members
+                        {signup.mainRole}
+                        {signup.secondaryRole ? ` / ${signup.secondaryRole}` : ""}
+                        {signup.opGgLink && (
+                          <>
+                            {" · "}
+                            <a
+                              href={signup.opGgLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-primary hover:underline"
+                            >
+                              OP.GG
+                            </a>
+                          </>
+                        )}
                       </p>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge
-                      variant="outline"
-                      className={
-                        reg.status === "ACCEPTED"
-                          ? "bg-green-500/15 text-green-400 border-green-500/30"
-                          : reg.status === "REJECTED"
-                          ? "bg-red-500/15 text-red-400 border-red-500/30"
-                          : "bg-amber-500/15 text-amber-400 border-amber-500/30"
-                      }
-                    >
-                      {reg.status}
-                    </Badge>
-                    {reg.status === "PENDING" && (
-                      <>
-                        <Button
-                          size="sm"
-                          onClick={() => handleRegistration(reg.id, "ACCEPTED")}
+                    <div className="flex items-center gap-2">
+                      {signup.wantsCaptain && (
+                        <Badge
+                          variant="outline"
+                          className="bg-amber-500/15 text-amber-400 border-amber-500/30"
                         >
-                          Accept
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => handleRegistration(reg.id, "REJECTED")}
-                        >
-                          Reject
-                        </Button>
-                      </>
-                    )}
+                          Captain
+                        </Badge>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Team registrations (pre-made) */}
+      {!isCaptainsDraft && (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              Registrations ({tournament.registrations.length}/{tournament.maxTeams})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {tournament.registrations.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No registrations yet.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {tournament.registrations.map((reg) => (
+                  <div
+                    key={reg.id}
+                    className="flex items-center justify-between rounded-lg border p-3"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div>
+                        <p className="text-sm font-medium">
+                          {reg.team.name}{" "}
+                          <span className="text-muted-foreground">
+                            [{reg.team.tag}]
+                          </span>
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {reg.team._count.members} members
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        variant="outline"
+                        className={
+                          reg.status === "ACCEPTED"
+                            ? "bg-green-500/15 text-green-400 border-green-500/30"
+                            : reg.status === "REJECTED"
+                            ? "bg-red-500/15 text-red-400 border-red-500/30"
+                            : "bg-amber-500/15 text-amber-400 border-amber-500/30"
+                        }
+                      >
+                        {reg.status}
+                      </Badge>
+                      {reg.status === "PENDING" && (
+                        <>
+                          <Button
+                            size="sm"
+                            onClick={() => handleRegistration(reg.id, "ACCEPTED")}
+                          >
+                            Accept
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleRegistration(reg.id, "REJECTED")}
+                          >
+                            Reject
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

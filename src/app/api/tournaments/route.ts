@@ -50,6 +50,7 @@ export async function POST(req: Request) {
         name: data.name,
         description: data.description || null,
         format: data.format,
+        teamMode: data.teamMode,
         maxTeams: data.maxTeams,
         minTeams: data.minTeams,
         teamSize: data.teamSize,

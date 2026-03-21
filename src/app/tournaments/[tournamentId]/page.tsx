@@ -40,6 +40,12 @@ export default async function TournamentDetailPage({
         },
         orderBy: { createdAt: "asc" },
       },
+      playerSignups: {
+        include: {
+          user: { select: { id: true, name: true, image: true } },
+        },
+        orderBy: { createdAt: "asc" },
+      },
     },
   });
 
@@ -53,13 +59,25 @@ export default async function TournamentDetailPage({
       })
     : [];
 
+  const isCaptainsDraft = tournament.teamMode === "CAPTAINS_DRAFT";
+
   const registeredTeamIds = new Set(
     tournament.registrations.map((r) => r.teamId)
   );
   const canRegister =
+    !isCaptainsDraft &&
     tournament.status === "REGISTRATION" &&
     session &&
     userTeams.some((t) => !registeredTeamIds.has(t.id));
+
+  const alreadySignedUp = isCaptainsDraft && session
+    ? tournament.playerSignups.some((s) => s.userId === session.user.id)
+    : false;
+  const canSignUp =
+    isCaptainsDraft &&
+    tournament.status === "REGISTRATION" &&
+    session &&
+    !alreadySignedUp;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -81,6 +99,19 @@ export default async function TournamentDetailPage({
             >
               Register Team
             </Link>
+          )}
+          {canSignUp && (
+            <Link
+              href={`/tournaments/${tournament.id}/signup`}
+              className={buttonVariants()}
+            >
+              Sign Up
+            </Link>
+          )}
+          {alreadySignedUp && (
+            <Badge variant="outline" className="bg-green-500/15 text-green-400 border-green-500/30">
+              Signed Up
+            </Badge>
           )}
           {isOrganizer && (
             <Link
@@ -113,12 +144,18 @@ export default async function TournamentDetailPage({
       <div className="grid gap-4 sm:grid-cols-3 mb-6">
         <Card>
           <CardContent className="pt-4">
-            <p className="text-sm text-muted-foreground">Teams</p>
+            <p className="text-sm text-muted-foreground">
+              {isCaptainsDraft ? "Players" : "Teams"}
+            </p>
             <p className="text-2xl font-bold">
-              {tournament.registrations.filter((r) => r.status === "ACCEPTED").length}
-              <span className="text-sm font-normal text-muted-foreground">
-                /{tournament.maxTeams}
-              </span>
+              {isCaptainsDraft
+                ? tournament.playerSignups.length
+                : tournament.registrations.filter((r) => r.status === "ACCEPTED").length}
+              {!isCaptainsDraft && (
+                <span className="text-sm font-normal text-muted-foreground">
+                  /{tournament.maxTeams}
+                </span>
+              )}
             </p>
           </CardContent>
         </Card>
@@ -142,55 +179,102 @@ export default async function TournamentDetailPage({
 
       <Separator className="mb-6" />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            Registered Teams ({tournament.registrations.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {tournament.registrations.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">
-              No teams registered yet.
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {tournament.registrations.map((reg) => (
-                <div
-                  key={reg.id}
-                  className="flex items-center justify-between rounded-lg border p-3"
-                >
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
-                        {reg.team.tag}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="text-sm font-medium">{reg.team.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        [{reg.team.tag}] · {reg.team._count.members} members
-                      </p>
-                    </div>
-                  </div>
-                  <Badge
-                    variant="outline"
-                    className={
-                      reg.status === "ACCEPTED"
-                        ? "bg-green-500/15 text-green-400 border-green-500/30"
-                        : reg.status === "REJECTED"
-                        ? "bg-red-500/15 text-red-400 border-red-500/30"
-                        : "bg-amber-500/15 text-amber-400 border-amber-500/30"
-                    }
+      {isCaptainsDraft ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              Signed Up Players ({tournament.playerSignups.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {tournament.playerSignups.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No players signed up yet.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {tournament.playerSignups.map((signup) => (
+                  <div
+                    key={signup.id}
+                    className="flex items-center justify-between rounded-lg border p-3"
                   >
-                    {reg.status}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={signup.user.image ?? undefined} />
+                        <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
+                          {signup.user.name?.[0]?.toUpperCase() ?? "?"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="text-sm font-medium">{signup.user.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {signup.mainRole}
+                          {signup.secondaryRole ? ` / ${signup.secondaryRole}` : ""}
+                        </p>
+                      </div>
+                    </div>
+                    {signup.wantsCaptain && (
+                      <Badge variant="outline" className="bg-amber-500/15 text-amber-400 border-amber-500/30">
+                        Captain
+                      </Badge>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              Registered Teams ({tournament.registrations.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {tournament.registrations.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No teams registered yet.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {tournament.registrations.map((reg) => (
+                  <div
+                    key={reg.id}
+                    className="flex items-center justify-between rounded-lg border p-3"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
+                          {reg.team.tag}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="text-sm font-medium">{reg.team.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          [{reg.team.tag}] · {reg.team._count.members} members
+                        </p>
+                      </div>
+                    </div>
+                    <Badge
+                      variant="outline"
+                      className={
+                        reg.status === "ACCEPTED"
+                          ? "bg-green-500/15 text-green-400 border-green-500/30"
+                          : reg.status === "REJECTED"
+                          ? "bg-red-500/15 text-red-400 border-red-500/30"
+                          : "bg-amber-500/15 text-amber-400 border-amber-500/30"
+                      }
+                    >
+                      {reg.status}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

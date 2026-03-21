@@ -31,6 +31,7 @@ export default function CreateTournamentPage() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [format, setFormat] = useState("SINGLE_ELIMINATION");
+  const [teamMode, setTeamMode] = useState("PRE_MADE");
 
   // Step 2: Settings
   const [maxTeams, setMaxTeams] = useState(16);
@@ -78,6 +79,7 @@ export default function CreateTournamentPage() {
         name,
         description: description || undefined,
         format,
+        teamMode,
         maxTeams,
         minTeams,
         teamSize,
@@ -156,6 +158,38 @@ export default function CreateTournamentPage() {
                   ))}
                 </div>
               </div>
+              <div className="space-y-2">
+                <Label>Team Mode</Label>
+                <div className="grid gap-2">
+                  {[
+                    { value: "PRE_MADE", label: "Pre-Made Teams", desc: "Teams register as existing rosters" },
+                    { value: "CAPTAINS_DRAFT", label: "Captains Draft", desc: "Players sign up individually, captains draft teams live" },
+                  ].map((m) => (
+                    <label
+                      key={m.value}
+                      className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors ${
+                        teamMode === m.value
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:bg-muted/50"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="teamMode"
+                        value={m.value}
+                        checked={teamMode === m.value}
+                        onChange={(e) => setTeamMode(e.target.value)}
+                        className="sr-only"
+                      />
+                      <div>
+                        <p className="font-medium text-sm">{m.label}</p>
+                        <p className="text-xs text-muted-foreground">{m.desc}</p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
               <Button
                 className="w-full"
                 onClick={() => setStep(2)}
