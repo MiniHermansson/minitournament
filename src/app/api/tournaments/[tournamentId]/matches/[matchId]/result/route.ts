@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth-utils";
 import { getEngine } from "@/lib/tournament-engine";
 
+export const runtime = "nodejs";
+
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ tournamentId: string; matchId: string }> }

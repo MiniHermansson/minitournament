@@ -4,6 +4,8 @@ import { requireAuth } from "@/lib/auth-utils";
 import { updateTournamentSchema } from "@/lib/validators/tournament";
 import { z } from "zod";
 
+export const runtime = "nodejs";
+
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ tournamentId: string }> }

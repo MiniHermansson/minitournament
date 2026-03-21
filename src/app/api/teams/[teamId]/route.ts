@@ -4,6 +4,8 @@ import { requireAuth } from "@/lib/auth-utils";
 import { updateTeamSchema } from "@/lib/validators/team";
 import { z } from "zod";
 
+export const runtime = "nodejs";
+
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ teamId: string }> }

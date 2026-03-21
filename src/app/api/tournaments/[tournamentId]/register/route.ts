@@ -4,6 +4,8 @@ import { requireAuth } from "@/lib/auth-utils";
 import { updateRegistrationSchema } from "@/lib/validators/tournament";
 import { z } from "zod";
 
+export const runtime = "nodejs";
+
 // Register a team for a tournament
 export async function POST(
   req: Request,

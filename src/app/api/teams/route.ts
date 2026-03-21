@@ -4,6 +4,8 @@ import { requireAuth } from "@/lib/auth-utils";
 import { createTeamSchema } from "@/lib/validators/team";
 import { z } from "zod";
 
+export const runtime = "nodejs";
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const page = parseInt(searchParams.get("page") ?? "1");

@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth-utils";
 import { GroupStageEngine } from "@/lib/tournament-engine/group-stage";
 
+export const runtime = "nodejs";
+
 // Get groups with standings and matches
 export async function GET(
   _req: Request,

@@ -4,6 +4,8 @@ import { requireAuth } from "@/lib/auth-utils";
 import { createTournamentSchema } from "@/lib/validators/tournament";
 import { z } from "zod";
 
+export const runtime = "nodejs";
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const status = searchParams.get("status");

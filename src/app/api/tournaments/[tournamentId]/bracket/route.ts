@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth-utils";
 import { getEngine } from "@/lib/tournament-engine";
 
+export const runtime = "nodejs";
+
 // Generate bracket / start tournament
 export async function POST(
   _req: Request,
