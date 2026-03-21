@@ -110,6 +110,13 @@ export function Navbar() {
                 <DropdownMenuItem>
                   <Link href="/settings" className="w-full">Settings</Link>
                 </DropdownMenuItem>
+                {["ADMIN", "SUPER_ADMIN"].includes(
+                  (session.user as Record<string, unknown>).role as string ?? ""
+                ) && (
+                  <DropdownMenuItem>
+                    <Link href="/admin" className="w-full">Admin</Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   className="cursor-pointer"
@@ -174,6 +181,21 @@ export function Navbar() {
                 >
                   Settings
                 </Link>
+                {["ADMIN", "SUPER_ADMIN"].includes(
+                  (session.user as Record<string, unknown>).role as string ?? ""
+                ) && (
+                  <Link
+                    href="/admin"
+                    onClick={() => setMobileOpen(false)}
+                    className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-muted/50 ${
+                      pathname === "/admin"
+                        ? "text-foreground bg-muted/30"
+                        : "text-muted-foreground"
+                    }`}
+                  >
+                    Admin
+                  </Link>
+                )}
               </>
             )}
             {!session?.user && status !== "loading" && (

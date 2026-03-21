@@ -19,6 +19,7 @@ export const config = {
   matcher: [
     "/dashboard",
     "/settings",
+    "/admin",
     "/tournaments/new",
     "/tournaments/:path*/manage",
     "/tournaments/:path*/draft",
