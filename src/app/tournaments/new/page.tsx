@@ -105,7 +105,9 @@ export default function CreateTournamentPage() {
       <Card className="w-full max-w-lg">
         <CardHeader>
           <CardTitle>Create Tournament</CardTitle>
-          <CardDescription>Step {step} of 3</CardDescription>
+          <CardDescription>
+            Step {teamMode === "CAPTAINS_DRAFT" ? (step === 1 ? 1 : 2) : step} of {teamMode === "CAPTAINS_DRAFT" ? 2 : 3}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {step === 1 && (
@@ -192,7 +194,7 @@ export default function CreateTournamentPage() {
 
               <Button
                 className="w-full"
-                onClick={() => setStep(2)}
+                onClick={() => setStep(teamMode === "CAPTAINS_DRAFT" ? 3 : 2)}
                 disabled={!name.trim()}
               >
                 Next
@@ -200,7 +202,7 @@ export default function CreateTournamentPage() {
             </div>
           )}
 
-          {step === 2 && (
+          {step === 2 && teamMode !== "CAPTAINS_DRAFT" && (
             <div className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-3">
                 <div className="space-y-2">
@@ -332,7 +334,7 @@ export default function CreateTournamentPage() {
               {error && <p className="text-sm text-destructive">{error}</p>}
 
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setStep(2)} className="flex-1">
+                <Button variant="outline" onClick={() => setStep(teamMode === "CAPTAINS_DRAFT" ? 1 : 2)} className="flex-1">
                   Back
                 </Button>
                 <Button onClick={onSubmit} disabled={loading} className="flex-1">

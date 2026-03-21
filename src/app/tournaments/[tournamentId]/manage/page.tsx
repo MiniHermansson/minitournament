@@ -5,6 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/tournament/status-badge";
@@ -60,6 +62,12 @@ export default function ManageTournamentPage() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
 
+  // Format config state (for captains draft — configured after draft)
+  const [bestOf, setBestOf] = useState("1");
+  const [groupCount, setGroupCount] = useState(4);
+  const [advancingPerGroup, setAdvancingPerGroup] = useState(2);
+  const [playoffBestOf, setPlayoffBestOf] = useState("1");
+
   const fetchTournament = useCallback(async () => {
     const res = await fetch(`/api/tournaments/${params.tournamentId}`);
     if (!res.ok) {
@@ -90,6 +98,30 @@ export default function ManageTournamentPage() {
 
   async function handleGenerateBracket() {
     setGenerating(true);
+
+    // For captains draft, save format config first
+    if (tournament?.teamMode === "CAPTAINS_DRAFT") {
+      const config: Record<string, unknown> = { bestOf: Number(bestOf) };
+      const fmt = tournament.format;
+      if (fmt === "ROUND_ROBIN" || fmt === "GROUP_STAGE" || fmt === "GROUP_STAGE_PLAYOFF") {
+        config.pointsForWin = 3;
+        config.pointsForDraw = 1;
+      }
+      if (fmt === "GROUP_STAGE" || fmt === "GROUP_STAGE_PLAYOFF") {
+        config.groupCount = groupCount;
+      }
+      if (fmt === "GROUP_STAGE_PLAYOFF") {
+        config.advancingPerGroup = advancingPerGroup;
+        config.playoffBestOf = Number(playoffBestOf);
+      }
+
+      await fetch(`/api/tournaments/${params.tournamentId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ formatConfig: config }),
+      });
+    }
+
     const res = await fetch(
       `/api/tournaments/${params.tournamentId}/bracket`,
       { method: "POST" }
@@ -239,12 +271,72 @@ export default function ManageTournamentPage() {
       {isCaptainsDraft && tournament.status === "REGISTRATION" && acceptedTeams >= 2 && (
         <Card className="mb-6 border-green-500/30">
           <CardHeader>
-            <CardTitle>Draft Complete — Start Tournament</CardTitle>
+            <CardTitle>Draft Complete — Configure & Start</CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
-              {acceptedTeams} teams created from the draft. Generate the bracket to start!
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              {acceptedTeams} teams created from the draft. Configure match settings, then generate the bracket.
             </p>
+
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label htmlFor="best-of">Best Of</Label>
+                <select
+                  id="best-of"
+                  value={bestOf}
+                  onChange={(e) => setBestOf(e.target.value)}
+                  className="flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm"
+                >
+                  <option value="1">Best of 1</option>
+                  <option value="3">Best of 3</option>
+                  <option value="5">Best of 5</option>
+                </select>
+              </div>
+
+              {(tournament.format === "GROUP_STAGE" || tournament.format === "GROUP_STAGE_PLAYOFF") && (
+                <div className="space-y-2">
+                  <Label htmlFor="group-count">Number of Groups</Label>
+                  <Input
+                    id="group-count"
+                    type="number"
+                    min={2}
+                    max={Math.floor(acceptedTeams / 2)}
+                    value={groupCount}
+                    onChange={(e) => setGroupCount(Number(e.target.value))}
+                  />
+                </div>
+              )}
+
+              {tournament.format === "GROUP_STAGE_PLAYOFF" && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="advancing">Teams Advancing Per Group</Label>
+                    <Input
+                      id="advancing"
+                      type="number"
+                      min={1}
+                      max={8}
+                      value={advancingPerGroup}
+                      onChange={(e) => setAdvancingPerGroup(Number(e.target.value))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="playoff-bo">Playoff Best Of</Label>
+                    <select
+                      id="playoff-bo"
+                      value={playoffBestOf}
+                      onChange={(e) => setPlayoffBestOf(e.target.value)}
+                      className="flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm"
+                    >
+                      <option value="1">Best of 1</option>
+                      <option value="3">Best of 3</option>
+                      <option value="5">Best of 5</option>
+                    </select>
+                  </div>
+                </>
+              )}
+            </div>
+
             <Button onClick={handleGenerateBracket} disabled={generating}>
               {generating ? "Generating..." : "Generate Bracket & Start"}
             </Button>
