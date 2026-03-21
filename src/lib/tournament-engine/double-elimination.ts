@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { nextPowerOf2, generateBracketSeeding } from "@/lib/tournament-utils";
 import type { TournamentEngine, GenerateOptions, SubmitResultOptions, Standing } from "./types";
 
 export class DoubleEliminationEngine implements TournamentEngine {
@@ -314,25 +315,3 @@ export class DoubleEliminationEngine implements TournamentEngine {
   }
 }
 
-function nextPowerOf2(n: number): number {
-  let p = 1;
-  while (p < n) p *= 2;
-  return p;
-}
-
-function generateBracketSeeding(size: number): number[] {
-  if (size === 1) return [1];
-  if (size === 2) return [1, 2];
-
-  let seeds = [1, 2];
-  while (seeds.length < size) {
-    const nextRoundSize = seeds.length * 2;
-    const newSeeds: number[] = [];
-    for (const seed of seeds) {
-      newSeeds.push(seed);
-      newSeeds.push(nextRoundSize + 1 - seed);
-    }
-    seeds = newSeeds;
-  }
-  return seeds;
-}

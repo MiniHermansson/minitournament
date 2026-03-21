@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { generateRoundRobinSchedule } from "@/lib/tournament-utils";
 import type { TournamentEngine, GenerateOptions, SubmitResultOptions, Standing } from "./types";
 
 export class RoundRobinEngine implements TournamentEngine {
@@ -147,47 +148,3 @@ export class RoundRobinEngine implements TournamentEngine {
   }
 }
 
-// Circle method for round-robin scheduling
-// Handles both even and odd team counts (adds a BYE for odd)
-function generateRoundRobinSchedule(teamIds: string[]): [string, string][][] {
-  const teams = [...teamIds];
-  const isOdd = teams.length % 2 !== 0;
-
-  // Add a null placeholder for bye if odd number of teams
-  if (isOdd) teams.push("BYE");
-
-  const n = teams.length;
-  const rounds = n - 1;
-  const halfSize = n / 2;
-  const schedule: [string, string][][] = [];
-
-  // Fix the first team, rotate the rest
-  const fixedTeam = teams[0];
-  const rotating = teams.slice(1);
-
-  for (let round = 0; round < rounds; round++) {
-    const roundMatches: [string, string][] = [];
-
-    // First match: fixed team vs current first in rotation
-    const opponent = rotating[0];
-    if (fixedTeam !== "BYE" && opponent !== "BYE") {
-      roundMatches.push([fixedTeam, opponent]);
-    }
-
-    // Pair remaining teams from outside in
-    for (let i = 1; i < halfSize; i++) {
-      const home = rotating[i];
-      const away = rotating[rotating.length - i];
-      if (home !== "BYE" && away !== "BYE") {
-        roundMatches.push([home, away]);
-      }
-    }
-
-    schedule.push(roundMatches);
-
-    // Rotate: move last element to front
-    rotating.unshift(rotating.pop()!);
-  }
-
-  return schedule;
-}

@@ -3,14 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, isOrganizer } from "@/lib/auth-utils";
 import { draftPickSchema } from "@/lib/validators/tournament";
 import { z } from "zod";
+import { getTeamForPick } from "@/lib/tournament-utils";
 
 export const runtime = "nodejs";
-
-function getTeamForPick(pickNumber: number, totalTeams: number): number {
-  const round = Math.ceil(pickNumber / totalTeams);
-  const posInRound = (pickNumber - 1) % totalTeams;
-  return round % 2 === 1 ? posInRound + 1 : totalTeams - posInRound;
-}
 
 export async function POST(
   req: Request,

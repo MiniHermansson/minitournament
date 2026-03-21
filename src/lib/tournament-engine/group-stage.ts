@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { generateRoundRobinSchedule } from "@/lib/tournament-utils";
 import type { TournamentEngine, GenerateOptions, SubmitResultOptions, Standing, TeamWithSeed } from "./types";
 import { SingleEliminationEngine } from "./single-elimination";
 
@@ -259,38 +260,3 @@ export class GroupStageEngine implements TournamentEngine {
   }
 }
 
-function generateRoundRobinSchedule(teamIds: string[]): [string, string][][] {
-  const teams = [...teamIds];
-  const isOdd = teams.length % 2 !== 0;
-  if (isOdd) teams.push("BYE");
-
-  const n = teams.length;
-  const rounds = n - 1;
-  const halfSize = n / 2;
-  const schedule: [string, string][][] = [];
-
-  const fixedTeam = teams[0];
-  const rotating = teams.slice(1);
-
-  for (let round = 0; round < rounds; round++) {
-    const roundMatches: [string, string][] = [];
-
-    const opponent = rotating[0];
-    if (fixedTeam !== "BYE" && opponent !== "BYE") {
-      roundMatches.push([fixedTeam, opponent]);
-    }
-
-    for (let i = 1; i < halfSize; i++) {
-      const home = rotating[i];
-      const away = rotating[rotating.length - i];
-      if (home !== "BYE" && away !== "BYE") {
-        roundMatches.push([home, away]);
-      }
-    }
-
-    schedule.push(roundMatches);
-    rotating.unshift(rotating.pop()!);
-  }
-
-  return schedule;
-}

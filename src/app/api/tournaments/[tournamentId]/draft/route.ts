@@ -2,14 +2,9 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, isOrganizer } from "@/lib/auth-utils";
 import { z } from "zod";
+import { getTeamForPick } from "@/lib/tournament-utils";
 
 export const runtime = "nodejs";
-
-function getTeamForPick(pickNumber: number, totalTeams: number): number {
-  const round = Math.ceil(pickNumber / totalTeams);
-  const posInRound = (pickNumber - 1) % totalTeams;
-  return round % 2 === 1 ? posInRound + 1 : totalTeams - posInRound;
-}
 
 // GET: Return draft state
 export async function GET(
