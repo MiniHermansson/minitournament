@@ -33,7 +33,6 @@ interface TournamentData {
 const statusTransitions: Record<string, { label: string; next: string }[]> = {
   DRAFT: [{ label: "Open Registration", next: "REGISTRATION" }],
   REGISTRATION: [
-    { label: "Start Tournament", next: "IN_PROGRESS" },
     { label: "Back to Draft", next: "DRAFT" },
   ],
   IN_PROGRESS: [{ label: "Complete Tournament", next: "COMPLETED" }],
@@ -47,6 +46,7 @@ export default function ManageTournamentPage() {
   const { data: session } = useSession();
   const [tournament, setTournament] = useState<TournamentData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
 
   const fetchTournament = useCallback(async () => {
     const res = await fetch(`/api/tournaments/${params.tournamentId}`);
@@ -74,6 +74,21 @@ export default function ManageTournamentPage() {
       body: JSON.stringify({ status: newStatus }),
     });
     if (res.ok) fetchTournament();
+  }
+
+  async function handleGenerateBracket() {
+    setGenerating(true);
+    const res = await fetch(
+      `/api/tournaments/${params.tournamentId}/bracket`,
+      { method: "POST" }
+    );
+    if (res.ok) {
+      router.push(`/tournaments/${params.tournamentId}/bracket`);
+    } else {
+      const data = await res.json();
+      alert(data.error);
+    }
+    setGenerating(false);
   }
 
   async function handleRegistration(registrationId: string, status: "ACCEPTED" | "REJECTED") {
@@ -137,6 +152,31 @@ export default function ManageTournamentPage() {
                 </Button>
               )}
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {tournament.status === "REGISTRATION" && (
+        <Card className="mb-6 border-primary/30">
+          <CardHeader>
+            <CardTitle>Start Tournament</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Generate the bracket/schedule and start the tournament.
+              {tournament.registrations.filter((r: Registration) => r.status === "ACCEPTED").length < 2
+                ? " You need at least 2 accepted teams."
+                : ""}
+            </p>
+            <Button
+              onClick={handleGenerateBracket}
+              disabled={
+                generating ||
+                tournament.registrations.filter((r: Registration) => r.status === "ACCEPTED").length < 2
+              }
+            >
+              {generating ? "Generating..." : "Generate Bracket & Start"}
+            </Button>
           </CardContent>
         </Card>
       )}
