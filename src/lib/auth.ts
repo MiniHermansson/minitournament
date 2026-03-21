@@ -9,10 +9,14 @@ export const authOptions: NextAuthOptions = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   adapter: PrismaAdapter(prisma as any) as NextAuthOptions["adapter"],
   providers: [
-    DiscordProvider({
-      clientId: process.env.DISCORD_CLIENT_ID ?? "",
-      clientSecret: process.env.DISCORD_CLIENT_SECRET ?? "",
-    }),
+    ...(process.env.DISCORD_CLIENT_ID && process.env.DISCORD_CLIENT_SECRET
+      ? [
+          DiscordProvider({
+            clientId: process.env.DISCORD_CLIENT_ID,
+            clientSecret: process.env.DISCORD_CLIENT_SECRET,
+          }),
+        ]
+      : []),
     CredentialsProvider({
       name: "credentials",
       credentials: {
@@ -54,10 +58,15 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
   },
   callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
+    async jwt({ token, user, account, profile }) {
+      if (account && user) {
+        // OAuth sign-in: user was just created/linked by the adapter
+        token.id = user.id;
+      } else if (user) {
+        // Credentials sign-in
         token.id = user.id;
       }
+      // On subsequent requests, token.id is already set
       return token;
     },
     async session({ session, token }) {
@@ -66,9 +75,12 @@ export const authOptions: NextAuthOptions = {
       }
       return session;
     },
+    async signIn({ user, account }) {
+      // Allow all sign-ins
+      return true;
+    },
   },
   pages: {
     signIn: "/login",
-    newUser: "/register",
   },
 };
