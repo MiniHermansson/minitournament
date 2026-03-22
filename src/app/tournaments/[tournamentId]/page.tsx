@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/tournament/status-badge";
+import { SignupList } from "@/components/tournament/signup-list";
 
 const formatLabels: Record<string, string> = {
   SINGLE_ELIMINATION: "Single Elimination",
@@ -187,41 +188,12 @@ export default async function TournamentDetailPage({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {tournament.playerSignups.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                No players signed up yet.
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {tournament.playerSignups.map((signup) => (
-                  <div
-                    key={signup.id}
-                    className="flex items-center justify-between rounded-lg border p-3"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={signup.user.image ?? undefined} />
-                        <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
-                          {signup.user.name?.[0]?.toUpperCase() ?? "?"}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="text-sm font-medium">{signup.user.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {signup.mainRole}
-                          {signup.secondaryRole ? ` / ${signup.secondaryRole}` : ""}
-                        </p>
-                      </div>
-                    </div>
-                    {signup.wantsCaptain && (
-                      <Badge variant="outline" className="bg-amber-500/15 text-amber-400 border-amber-500/30">
-                        Captain
-                      </Badge>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
+            <SignupList
+              tournamentId={tournament.id}
+              signups={tournament.playerSignups}
+              isOrganizer={isOrganizer}
+              canRemove={tournament.status === "REGISTRATION"}
+            />
           </CardContent>
         </Card>
       ) : (

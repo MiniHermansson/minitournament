@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth-utils";
+import { requireAuth, isOrganizer } from "@/lib/auth-utils";
 import { playerSignupSchema } from "@/lib/validators/tournament";
 import { z } from "zod";
 
@@ -104,6 +104,36 @@ export async function DELETE(
 
   const { tournamentId } = await params;
 
+  // Check if a userId query param is provided (organizer removing someone else)
+  const { searchParams } = new URL(req.url);
+  const targetUserId = searchParams.get("userId");
+
+  if (targetUserId && targetUserId !== session!.user.id) {
+    // Organizer removing another player
+    const tournament = await prisma.tournament.findUnique({
+      where: { id: tournamentId },
+    });
+
+    if (!tournament) {
+      return NextResponse.json({ error: "Tournament not found" }, { status: 404 });
+    }
+    if (!isOrganizer(tournament, session!.user.id)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const signup = await prisma.playerSignup.findUnique({
+      where: { tournamentId_userId: { tournamentId, userId: targetUserId } },
+    });
+
+    if (!signup) {
+      return NextResponse.json({ error: "Player not signed up" }, { status: 404 });
+    }
+
+    await prisma.playerSignup.delete({ where: { id: signup.id } });
+    return NextResponse.json({ success: true });
+  }
+
+  // Player removing themselves
   const signup = await prisma.playerSignup.findUnique({
     where: { tournamentId_userId: { tournamentId, userId: session!.user.id } },
   });
