@@ -23,7 +23,7 @@ const ROLES = [
   { value: "FILL", label: "Fill" },
 ];
 
-const SECONDARY_ROLES = ROLES.filter((r) => r.value !== "FILL");
+const SECONDARY_ROLES = ROLES;
 
 export default function SignupPage() {
   const params = useParams<{ tournamentId: string }>();

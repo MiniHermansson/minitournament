@@ -112,21 +112,21 @@ export function SignupList({ tournamentId, signups, isOrganizer, canRemove, rank
                   {signup.mainRole}
                   {signup.secondaryRole ? ` / ${signup.secondaryRole}` : ""}
                 </span>
-                <RankBadge rank={ranks[signup.userId]} />
-                {signup.opGgLink && (
-                  <a
-                    href={signup.opGgLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-primary hover:underline"
-                  >
-                    OP.GG
-                  </a>
-                )}
               </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <RankBadge rank={ranks[signup.userId]} />
+            {signup.opGgLink && (
+              <a
+                href={signup.opGgLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-primary hover:underline"
+              >
+                OP.GG
+              </a>
+            )}
             {signup.wantsCaptain && (
               <Badge variant="outline" className="bg-amber-500/15 text-amber-400 border-amber-500/30">
                 Captain

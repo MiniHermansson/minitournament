@@ -282,20 +282,21 @@ export default function DraftPage() {
                           Wants Captain
                         </Badge>
                       )}
-                      <RankBadge rank={ranks[signup.userId]} />
-                      {signup.opGgLink && (
-                        <a
-                          href={signup.opGgLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-primary hover:underline"
-                        >
-                          OP.GG
-                        </a>
-                      )}
                     </div>
                   </div>
-                  <div className="flex gap-1">
+                  <div className="flex items-center gap-2">
+                    <RankBadge rank={ranks[signup.userId]} />
+                    {signup.opGgLink && (
+                      <a
+                        href={signup.opGgLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-primary hover:underline"
+                      >
+                        OP.GG
+                      </a>
+                    )}
+                    <div className="flex gap-1">
                     {Array.from({ length: teamCount }, (_, i) => i + 1).map((tn) => {
                       const isAssigned = assignedTeam === tn;
                       const slotTaken = captainAssignments.has(tn) && captainAssignments.get(tn) !== signup.userId;
@@ -316,6 +317,7 @@ export default function DraftPage() {
                         </button>
                       );
                     })}
+                    </div>
                   </div>
                 </div>
               );
