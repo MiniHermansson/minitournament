@@ -216,7 +216,7 @@ export default function DraftPage() {
                         {signup.mainRole}
                       </Badge>
                       {signup.secondaryRole && (
-                        <Badge variant="outline" className={`text-xs ${ROLE_COLORS[signup.secondaryRole] ?? ""}`}>
+                        <Badge variant="outline" className="text-xs bg-gray-500/15 text-gray-400 border-gray-500/30">
                           {signup.secondaryRole}
                         </Badge>
                       )}

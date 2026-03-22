@@ -295,7 +295,7 @@ export function DraftBoard({
                       {player.mainRole}
                     </Badge>
                     {player.secondaryRole && (
-                      <Badge variant="outline" className={`text-xs ${ROLE_COLORS[player.secondaryRole] ?? ""}`}>
+                      <Badge variant="outline" className="text-xs bg-gray-500/15 text-gray-400 border-gray-500/30">
                         {player.secondaryRole}
                       </Badge>
                     )}
