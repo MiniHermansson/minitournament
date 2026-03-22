@@ -26,6 +26,14 @@ interface PlayerSignup {
   user: UserInfo;
 }
 
+interface RankInfo {
+  tier: string | null;
+  rank: string | null;
+  lp: number | null;
+  wins: number | null;
+  losses: number | null;
+}
+
 const ROLE_COLORS: Record<string, string> = {
   TOP: "bg-red-500/15 text-red-400 border-red-500/30",
   JUNGLE: "bg-green-500/15 text-green-400 border-green-500/30",
@@ -34,6 +42,30 @@ const ROLE_COLORS: Record<string, string> = {
   SUPPORT: "bg-cyan-500/15 text-cyan-400 border-cyan-500/30",
   FILL: "bg-purple-500/15 text-purple-400 border-purple-500/30",
 };
+
+const TIER_COLORS: Record<string, string> = {
+  IRON: "bg-gray-500/15 text-gray-400 border-gray-500/30",
+  BRONZE: "bg-amber-700/15 text-amber-600 border-amber-700/30",
+  SILVER: "bg-slate-300/15 text-slate-300 border-slate-300/30",
+  GOLD: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30",
+  PLATINUM: "bg-cyan-400/15 text-cyan-300 border-cyan-400/30",
+  EMERALD: "bg-green-400/15 text-green-300 border-green-400/30",
+  DIAMOND: "bg-blue-400/15 text-blue-300 border-blue-400/30",
+  MASTER: "bg-purple-500/15 text-purple-400 border-purple-500/30",
+  GRANDMASTER: "bg-red-500/15 text-red-400 border-red-500/30",
+  CHALLENGER: "bg-amber-400/15 text-amber-300 border-amber-400/30",
+};
+
+function RankBadge({ rank }: { rank: RankInfo | null | undefined }) {
+  if (!rank || !rank.tier) return null;
+  const colors = TIER_COLORS[rank.tier] ?? "bg-gray-500/15 text-gray-400 border-gray-500/30";
+  const label = `${rank.tier[0]}${rank.tier.slice(1).toLowerCase()} ${rank.rank ?? ""}`.trim();
+  return (
+    <Badge variant="outline" className={`text-xs ${colors}`} title={rank.lp != null ? `${rank.lp} LP · ${rank.wins}W ${rank.losses}L` : undefined}>
+      {label}{rank.lp != null ? ` ${rank.lp}LP` : ""}
+    </Badge>
+  );
+}
 
 export default function DraftPage() {
   const params = useParams<{ tournamentId: string }>();
@@ -50,18 +82,41 @@ export default function DraftPage() {
   >(new Map());
   const [teamCount, setTeamCount] = useState(2);
   const [starting, setStarting] = useState(false);
+  const [ranks, setRanks] = useState<Record<string, RankInfo | null>>({});
+
+  const fetchRanks = useCallback(async (playerSignups: PlayerSignup[]) => {
+    const userIds = playerSignups.map((s) => s.userId);
+    if (userIds.length === 0) return;
+
+    try {
+      const res = await fetch(`/api/tournaments/${params.tournamentId}/ranks`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userIds }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setRanks(data.ranks);
+      }
+    } catch {
+      // Ranks are non-critical
+    }
+  }, [params.tournamentId]);
 
   const fetchDraft = useCallback(async () => {
     const res = await fetch(`/api/tournaments/${params.tournamentId}/draft`);
     if (!res.ok) return;
     const data = await res.json();
     setDraftData(data);
-    if (data.signups) setSignups(data.signups);
+    if (data.signups) {
+      setSignups(data.signups);
+      fetchRanks(data.signups);
+    }
     if (!data.draftState && data.signups) {
       setTeamCount(Math.floor(data.signups.length / 5));
     }
     setLoading(false);
-  }, [params.tournamentId]);
+  }, [params.tournamentId, fetchRanks]);
 
   useEffect(() => {
     if (session) fetchDraft();
@@ -225,6 +280,7 @@ export default function DraftPage() {
                           Wants Captain
                         </Badge>
                       )}
+                      <RankBadge rank={ranks[signup.userId]} />
                       {signup.opGgLink && (
                         <a
                           href={signup.opGgLink}

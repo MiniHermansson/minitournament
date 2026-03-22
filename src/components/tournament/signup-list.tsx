@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -66,28 +66,26 @@ export function SignupList({ tournamentId, signups, isOrganizer, canRemove }: Si
   const [removing, setRemoving] = useState<string | null>(null);
   const [ranks, setRanks] = useState<Record<string, RankInfo | null>>({});
 
-  const fetchRanks = useCallback(async () => {
+  const userIdKey = signups.map((s) => s.userId).sort().join(",");
+
+  useEffect(() => {
     const userIds = signups.map((s) => s.userId);
     if (userIds.length === 0) return;
 
-    try {
-      const res = await fetch(`/api/tournaments/${tournamentId}/ranks`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userIds }),
+    fetch(`/api/tournaments/${tournamentId}/ranks`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userIds }),
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.ranks) setRanks(data.ranks);
+      })
+      .catch(() => {
+        // Ranks are non-critical
       });
-      if (res.ok) {
-        const data = await res.json();
-        setRanks(data.ranks);
-      }
-    } catch {
-      // Ranks are non-critical
-    }
-  }, [signups, tournamentId]);
-
-  useEffect(() => {
-    fetchRanks();
-  }, [fetchRanks]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tournamentId, userIdKey]);
 
   const handleRemove = async (userId: string) => {
     setRemoving(userId);
