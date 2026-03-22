@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth-utils";
 import { fetchRankedData, RankInfo } from "@/lib/riot-api";
 import { z } from "zod";
 
@@ -14,9 +13,6 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ tournamentId: string }> }
 ) {
-  const { error } = await requireAuth();
-  if (error) return error;
-
   const { tournamentId } = await params;
 
   try {

@@ -77,12 +77,22 @@ export function SignupList({ tournamentId, signups, isOrganizer, canRemove }: Si
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userIds }),
     })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data?.ranks) setRanks(data.ranks);
+      .then(async (res) => {
+        if (!res.ok) {
+          const text = await res.text().catch(() => "");
+          console.error(`[ranks] API returned ${res.status}: ${text}`);
+          return null;
+        }
+        return res.json();
       })
-      .catch(() => {
-        // Ranks are non-critical
+      .then((data) => {
+        if (data?.ranks) {
+          console.log("[ranks] Received:", data.ranks);
+          setRanks(data.ranks);
+        }
+      })
+      .catch((err) => {
+        console.error("[ranks] Fetch failed:", err);
       });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tournamentId, userIdKey]);
