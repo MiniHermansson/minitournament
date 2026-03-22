@@ -7,6 +7,52 @@ import { getTeamForPick } from "@/lib/tournament-utils";
 
 export const runtime = "nodejs";
 
+// DELETE: Undo last pick
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ tournamentId: string }> }
+) {
+  const { error, session } = await requireAuth();
+  if (error) return error;
+
+  const { tournamentId } = await params;
+
+  const tournament = await prisma.tournament.findUnique({
+    where: { id: tournamentId },
+  });
+
+  if (!tournament) {
+    return NextResponse.json({ error: "Tournament not found" }, { status: 404 });
+  }
+  if (!isOrganizer(tournament, session!.user.id)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  if (tournament.status !== "DRAFTING") {
+    return NextResponse.json({ error: "Draft is not active" }, { status: 400 });
+  }
+
+  const draftState = await prisma.draftState.findUnique({
+    where: { tournamentId },
+    include: { picks: { orderBy: { pickNumber: "desc" }, take: 1 } },
+  });
+
+  if (!draftState || draftState.picks.length === 0) {
+    return NextResponse.json({ error: "No picks to undo" }, { status: 400 });
+  }
+
+  const lastPick = draftState.picks[0];
+
+  await prisma.$transaction(async (tx) => {
+    await tx.draftPick.delete({ where: { id: lastPick.id } });
+    await tx.draftState.update({
+      where: { id: draftState.id },
+      data: { currentPick: lastPick.pickNumber - 1 },
+    });
+  });
+
+  return NextResponse.json({ success: true, undonePickNumber: lastPick.pickNumber });
+}
+
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ tournamentId: string }> }

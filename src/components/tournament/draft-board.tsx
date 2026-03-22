@@ -82,6 +82,7 @@ export function DraftBoard({
   const [finalizing, setFinalizing] = useState(false);
   const [roleFilter, setRoleFilter] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
+  const [undoing, setUndoing] = useState(false);
 
   const signupByUser = new Map(signups.map((s) => [s.userId, s]));
 
@@ -103,6 +104,22 @@ export function DraftBoard({
       toast.error(data.error);
     }
     setPicking(false);
+  }
+
+  async function handleUndo() {
+    setUndoing(true);
+    const res = await fetch(`/api/tournaments/${tournamentId}/draft/pick`, {
+      method: "DELETE",
+    });
+
+    if (res.ok) {
+      toast.success("Last pick undone");
+      onPickMade();
+    } else {
+      const data = await res.json();
+      toast.error(data.error);
+    }
+    setUndoing(false);
   }
 
   async function handleFinalize() {
@@ -165,6 +182,17 @@ export function DraftBoard({
               </span>
             )}
           </p>
+          {draftState.currentPick > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-3"
+              disabled={undoing}
+              onClick={handleUndo}
+            >
+              {undoing ? "Undoing..." : "Undo Last Pick"}
+            </Button>
+          )}
         </div>
       )}
 
@@ -174,9 +202,18 @@ export function DraftBoard({
           <p className="text-sm text-muted-foreground mt-1">
             All picks are in. Finalize to create the teams.
           </p>
-          <Button onClick={handleFinalize} disabled={finalizing} className="mt-3">
-            {finalizing ? "Finalizing..." : "Finalize Draft & Create Teams"}
-          </Button>
+          <div className="flex items-center justify-center gap-3 mt-3">
+            <Button
+              variant="outline"
+              disabled={undoing}
+              onClick={handleUndo}
+            >
+              {undoing ? "Undoing..." : "Undo Last Pick"}
+            </Button>
+            <Button onClick={handleFinalize} disabled={finalizing}>
+              {finalizing ? "Finalizing..." : "Finalize Draft & Create Teams"}
+            </Button>
+          </div>
         </div>
       )}
 
