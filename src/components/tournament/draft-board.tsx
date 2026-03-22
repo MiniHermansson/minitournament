@@ -394,32 +394,34 @@ export function DraftBoard({
                         {player.secondaryRole}
                       </Badge>
                     )}
-                    <RankBadge rank={ranks[player.userId]} />
-                    {player.opGgLink && (
-                      <a
-                        href={player.opGgLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-primary hover:underline"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        OP.GG
-                      </a>
-                    )}
                   </div>
                 </div>
-                {selectedPlayer === player.userId && !draftState.isComplete && (
-                  <Button
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handlePick();
-                    }}
-                    disabled={picking}
-                  >
-                    {picking ? "Picking..." : "Pick"}
-                  </Button>
-                )}
+                <div className="flex items-center gap-2">
+                  <RankBadge rank={ranks[player.userId]} />
+                  {player.opGgLink && (
+                    <a
+                      href={player.opGgLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-primary hover:underline"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      OP.GG
+                    </a>
+                  )}
+                  {selectedPlayer === player.userId && !draftState.isComplete && (
+                    <Button
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handlePick();
+                      }}
+                      disabled={picking}
+                    >
+                      {picking ? "Picking..." : "Pick"}
+                    </Button>
+                  )}
+                </div>
               </div>
             ))}
 
