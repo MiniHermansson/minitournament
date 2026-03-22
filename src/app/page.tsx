@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
+import { getSession } from "@/lib/auth-utils";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const session = await getSession();
   return (
     <div className="flex flex-col">
       <section className="flex flex-1 flex-col items-center justify-center gap-8 px-4 py-24 text-center">
@@ -21,9 +23,11 @@ export default function HomePage() {
           <Link href="/tournaments" className={buttonVariants({ size: "lg" })}>
             Browse Tournaments
           </Link>
-          <Link href="/register" className={buttonVariants({ size: "lg", variant: "outline" })}>
-            Get Started
-          </Link>
+          {!session && (
+            <Link href="/register" className={buttonVariants({ size: "lg", variant: "outline" })}>
+              Get Started
+            </Link>
+          )}
         </div>
 
         <div className="mt-16 grid gap-8 sm:grid-cols-3 max-w-3xl w-full">
