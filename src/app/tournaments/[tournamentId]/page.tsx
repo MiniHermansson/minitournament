@@ -211,6 +211,7 @@ export default async function TournamentDetailPage({
       {/* DEBUG: remove after confirming ranks work */}
       <pre className="text-xs bg-muted p-2 rounded mb-4 overflow-auto">
         DEBUG ranks: {JSON.stringify(ranks, null, 2)}
+        {"\n"}DEBUG signups opgg: {JSON.stringify(tournament.playerSignups.map(s => ({ userId: s.userId, opGgLink: s.opGgLink })), null, 2)}
       </pre>
 
       <Separator className="mb-6" />
