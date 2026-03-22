@@ -45,14 +45,51 @@ export interface RankInfo {
 
 /**
  * Parse an op.gg URL into region, gameName, and tagLine.
- * Format: https://www.op.gg/summoners/{region}/{gameName}-{tagLine}
+ * Supports multiple formats:
+ *   - https://www.op.gg/summoners/euw/PlayerName-TAG
+ *   - https://op.gg/lol/summoners/search?q=PlayerName&region=euw
+ *   - https://op.gg/lol/summoners/search?q=PlayerName-TAG&region=euw
  */
 export function parseOpGgUrl(url: string): ParsedOpGg | null {
   try {
     const parsed = new URL(url);
     if (!parsed.hostname.includes("op.gg")) return null;
 
-    // Path: /summoners/euw/PlayerName-TAG
+    // Format 1: Search URL — /lol/summoners/search?q=...&region=...
+    if (parsed.pathname.includes("/search")) {
+      const q = parsed.searchParams.get("q");
+      const regionParam = parsed.searchParams.get("region");
+      if (!q || !regionParam) return null;
+
+      const region = regionParam.toLowerCase();
+      const regionInfo = REGION_MAP[region];
+      if (!regionInfo) return null;
+
+      const decoded = decodeURIComponent(q);
+
+      // Check if tag is in the query (Name-TAG or Name#TAG)
+      const hashIndex = decoded.indexOf("#");
+      const lastDash = decoded.lastIndexOf("-");
+
+      let gameName: string;
+      let tagLine: string;
+
+      if (hashIndex > 0) {
+        gameName = decoded.substring(0, hashIndex);
+        tagLine = decoded.substring(hashIndex + 1);
+      } else if (lastDash > 0) {
+        gameName = decoded.substring(0, lastDash);
+        tagLine = decoded.substring(lastDash + 1);
+      } else {
+        // No tag provided — use region as tagLine (common default)
+        gameName = decoded;
+        tagLine = region.toUpperCase();
+      }
+
+      return { region, gameName, tagLine, platform: regionInfo.platform, routing: regionInfo.routing };
+    }
+
+    // Format 2: Direct profile URL — /summoners/{region}/{gameName}-{tagLine}
     const parts = parsed.pathname.split("/").filter(Boolean);
     if (parts.length < 3 || parts[0] !== "summoners") return null;
 
@@ -61,20 +98,13 @@ export function parseOpGgUrl(url: string): ParsedOpGg | null {
     if (!regionInfo) return null;
 
     const nameAndTag = parts.slice(2).join("/");
-    // The tagLine is after the last '-'
     const lastDash = nameAndTag.lastIndexOf("-");
     if (lastDash <= 0) return null;
 
     const gameName = decodeURIComponent(nameAndTag.substring(0, lastDash));
     const tagLine = decodeURIComponent(nameAndTag.substring(lastDash + 1));
 
-    return {
-      region,
-      gameName,
-      tagLine,
-      platform: regionInfo.platform,
-      routing: regionInfo.routing,
-    };
+    return { region, gameName, tagLine, platform: regionInfo.platform, routing: regionInfo.routing };
   } catch {
     return null;
   }
