@@ -66,11 +66,15 @@ export async function POST(
     // Fetch remaining ranks from Riot API
     const remaining = signups.filter((s) => !(s.userId in ranks) && s.opGgLink);
 
+    console.log(`[ranks] ${signups.length} signups with op.gg links, ${remaining.length} need fresh fetch`);
+
     await Promise.allSettled(
       remaining.map(async (signup) => {
         try {
+          console.log(`[ranks] Fetching rank for user ${signup.userId}, opGgLink: ${signup.opGgLink}`);
           const result = await fetchRankedData(signup.opGgLink!);
           if (result) {
+            console.log(`[ranks] Got rank for ${signup.userId}: ${result.rank.tier} ${result.rank.rank}`);
             ranks[signup.userId] = result.rank;
 
             // Link puuid to signup if not already linked
@@ -83,9 +87,11 @@ export async function POST(
               });
             }
           } else {
+            console.log(`[ranks] fetchRankedData returned null for ${signup.userId}`);
             ranks[signup.userId] = null;
           }
-        } catch {
+        } catch (err) {
+          console.error(`[ranks] Error fetching rank for ${signup.userId}:`, err);
           ranks[signup.userId] = null;
         }
       })

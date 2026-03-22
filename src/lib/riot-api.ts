@@ -90,16 +90,26 @@ async function riotFetch(url: string): Promise<Response> {
  * Fetch ranked data for a player, using cache when available.
  */
 export async function fetchRankedData(opGgLink: string): Promise<{ puuid: string; rank: RankInfo } | null> {
-  if (!RIOT_API_KEY) return null;
+  if (!RIOT_API_KEY) {
+    console.log("[riot-api] No RIOT_API_KEY set");
+    return null;
+  }
 
   const parsed = parseOpGgUrl(opGgLink);
-  if (!parsed) return null;
+  if (!parsed) {
+    console.log(`[riot-api] Failed to parse op.gg URL: ${opGgLink}`);
+    return null;
+  }
+
+  console.log(`[riot-api] Parsed: region=${parsed.region} gameName=${parsed.gameName} tagLine=${parsed.tagLine} platform=${parsed.platform} routing=${parsed.routing}`);
 
   // 1. Get account PUUID
-  const accountRes = await riotFetch(
-    `https://${parsed.routing}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(parsed.gameName)}/${encodeURIComponent(parsed.tagLine)}`
-  );
-  if (!accountRes.ok) return null;
+  const accountUrl = `https://${parsed.routing}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(parsed.gameName)}/${encodeURIComponent(parsed.tagLine)}`;
+  const accountRes = await riotFetch(accountUrl);
+  if (!accountRes.ok) {
+    console.log(`[riot-api] Account lookup failed: ${accountRes.status} ${await accountRes.text().catch(() => "")}`);
+    return null;
+  }
   const accountData = await accountRes.json();
   const puuid = accountData.puuid as string;
 
@@ -122,7 +132,10 @@ export async function fetchRankedData(opGgLink: string): Promise<{ puuid: string
   const summonerRes = await riotFetch(
     `https://${parsed.platform}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${puuid}`
   );
-  if (!summonerRes.ok) return null;
+  if (!summonerRes.ok) {
+    console.log(`[riot-api] Summoner lookup failed: ${summonerRes.status}`);
+    return null;
+  }
   const summonerData = await summonerRes.json();
   const summonerId = summonerData.id as string;
 
@@ -130,7 +143,10 @@ export async function fetchRankedData(opGgLink: string): Promise<{ puuid: string
   const leagueRes = await riotFetch(
     `https://${parsed.platform}.api.riotgames.com/lol/league/v4/entries/by-summoner/${summonerId}`
   );
-  if (!leagueRes.ok) return null;
+  if (!leagueRes.ok) {
+    console.log(`[riot-api] League lookup failed: ${leagueRes.status}`);
+    return null;
+  }
   const leagueEntries = await leagueRes.json();
 
   // Find solo queue entry
