@@ -42,8 +42,15 @@ export default async function TournamentDetailPage({
         orderBy: { createdAt: "asc" },
       },
       playerSignups: {
-        include: {
+        select: {
+          id: true,
+          userId: true,
+          mainRole: true,
+          secondaryRole: true,
+          wantsCaptain: true,
+          opGgLink: true,
           user: { select: { id: true, name: true, image: true } },
+          createdAt: true,
         },
         orderBy: { createdAt: "asc" },
       },

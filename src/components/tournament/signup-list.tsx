@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -8,12 +8,45 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
 
+interface RankInfo {
+  tier: string | null;
+  rank: string | null;
+  lp: number | null;
+  wins: number | null;
+  losses: number | null;
+}
+
+const TIER_COLORS: Record<string, string> = {
+  IRON: "bg-gray-500/15 text-gray-400 border-gray-500/30",
+  BRONZE: "bg-amber-700/15 text-amber-600 border-amber-700/30",
+  SILVER: "bg-slate-300/15 text-slate-300 border-slate-300/30",
+  GOLD: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30",
+  PLATINUM: "bg-cyan-400/15 text-cyan-300 border-cyan-400/30",
+  EMERALD: "bg-green-400/15 text-green-300 border-green-400/30",
+  DIAMOND: "bg-blue-400/15 text-blue-300 border-blue-400/30",
+  MASTER: "bg-purple-500/15 text-purple-400 border-purple-500/30",
+  GRANDMASTER: "bg-red-500/15 text-red-400 border-red-500/30",
+  CHALLENGER: "bg-amber-400/15 text-amber-300 border-amber-400/30",
+};
+
+function RankBadge({ rank }: { rank: RankInfo | null | undefined }) {
+  if (!rank || !rank.tier) return null;
+  const colors = TIER_COLORS[rank.tier] ?? "bg-gray-500/15 text-gray-400 border-gray-500/30";
+  const label = `${rank.tier[0]}${rank.tier.slice(1).toLowerCase()} ${rank.rank ?? ""}`.trim();
+  return (
+    <Badge variant="outline" className={`text-xs ${colors}`} title={rank.lp != null ? `${rank.lp} LP · ${rank.wins}W ${rank.losses}L` : undefined}>
+      {label}{rank.lp != null ? ` ${rank.lp}LP` : ""}
+    </Badge>
+  );
+}
+
 interface Signup {
   id: string;
   userId: string;
   mainRole: string;
   secondaryRole: string | null;
   wantsCaptain: boolean;
+  opGgLink?: string | null;
   user: {
     id: string;
     name: string | null;
@@ -31,6 +64,30 @@ interface SignupListProps {
 export function SignupList({ tournamentId, signups, isOrganizer, canRemove }: SignupListProps) {
   const router = useRouter();
   const [removing, setRemoving] = useState<string | null>(null);
+  const [ranks, setRanks] = useState<Record<string, RankInfo | null>>({});
+
+  const fetchRanks = useCallback(async () => {
+    const userIds = signups.map((s) => s.userId);
+    if (userIds.length === 0) return;
+
+    try {
+      const res = await fetch(`/api/tournaments/${tournamentId}/ranks`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userIds }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setRanks(data.ranks);
+      }
+    } catch {
+      // Ranks are non-critical
+    }
+  }, [signups, tournamentId]);
+
+  useEffect(() => {
+    fetchRanks();
+  }, [fetchRanks]);
 
   const handleRemove = async (userId: string) => {
     setRemoving(userId);
@@ -73,10 +130,23 @@ export function SignupList({ tournamentId, signups, isOrganizer, canRemove }: Si
             </Avatar>
             <div>
               <p className="text-sm font-medium">{signup.user.name}</p>
-              <p className="text-xs text-muted-foreground">
-                {signup.mainRole}
-                {signup.secondaryRole ? ` / ${signup.secondaryRole}` : ""}
-              </p>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="text-xs text-muted-foreground">
+                  {signup.mainRole}
+                  {signup.secondaryRole ? ` / ${signup.secondaryRole}` : ""}
+                </span>
+                <RankBadge rank={ranks[signup.userId]} />
+                {signup.opGgLink && (
+                  <a
+                    href={signup.opGgLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-primary hover:underline"
+                  >
+                    OP.GG
+                  </a>
+                )}
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
