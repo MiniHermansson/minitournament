@@ -49,6 +49,12 @@ export default function AdminPage() {
   const [dialogValue, setDialogValue] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  // Seed state
+  const [seedTournamentId, setSeedTournamentId] = useState("");
+  const [seedCount, setSeedCount] = useState(10);
+  const [seeding, setSeeding] = useState(false);
+  const [seedResult, setSeedResult] = useState<string | null>(null);
+
   const userRole = (session?.user as Record<string, unknown> | undefined)?.role as string | undefined;
   const isSuperAdmin = userRole === "SUPER_ADMIN";
 
@@ -111,6 +117,28 @@ export default function AdminPage() {
     setSubmitting(false);
   };
 
+  const handleSeed = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSeeding(true);
+    setSeedResult(null);
+
+    const res = await fetch("/api/admin/seed", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tournamentId: seedTournamentId, count: seedCount }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      toast.error(data.error);
+    } else {
+      toast.success(data.message);
+      setSeedResult(data.message);
+      fetchUsers();
+    }
+    setSeeding(false);
+  };
+
   const handleToggleRole = async (user: UserData) => {
     const newRole = user.role === "ADMIN" ? "USER" : "ADMIN";
     const res = await fetch(`/api/admin/users/${user.id}`, {
@@ -145,6 +173,48 @@ export default function AdminPage() {
     <div className="container mx-auto max-w-4xl px-4 py-8">
       <h1 className="text-3xl font-bold mb-2">Admin Panel</h1>
       <p className="text-muted-foreground mb-8">Manage users and permissions</p>
+
+      {/* Seed Test Players */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Seed Test Players</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground mb-4">
+            Create dummy users and sign them up for a captains draft tournament for testing.
+            Password for all test users: <code className="bg-muted px-1 py-0.5 rounded">testpass123</code>
+          </p>
+          <form onSubmit={handleSeed} className="flex flex-col sm:flex-row gap-3">
+            <div className="flex-1">
+              <Label htmlFor="seedTournamentId" className="sr-only">Tournament ID</Label>
+              <Input
+                id="seedTournamentId"
+                value={seedTournamentId}
+                onChange={(e) => setSeedTournamentId(e.target.value)}
+                placeholder="Tournament ID (from URL)"
+                required
+              />
+            </div>
+            <div className="w-24">
+              <Label htmlFor="seedCount" className="sr-only">Count</Label>
+              <Input
+                id="seedCount"
+                type="number"
+                value={seedCount}
+                onChange={(e) => setSeedCount(Number(e.target.value))}
+                min={1}
+                max={50}
+              />
+            </div>
+            <Button type="submit" disabled={seeding}>
+              {seeding ? "Seeding..." : "Seed Players"}
+            </Button>
+          </form>
+          {seedResult && (
+            <p className="text-sm text-green-500 mt-3">{seedResult}</p>
+          )}
+        </CardContent>
+      </Card>
 
       <form onSubmit={handleSearch} className="flex gap-2 mb-6">
         <Input
