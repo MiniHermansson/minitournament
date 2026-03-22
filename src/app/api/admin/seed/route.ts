@@ -59,11 +59,13 @@ export async function POST(req: Request) {
 
       if (!existing) {
         const role = ROLES[i % ROLES.length];
+        const secondary = role === "FILL" ? null : ROLES[(i + 2) % ROLES.length] || null;
         await prisma.playerSignup.create({
           data: {
             tournamentId,
             userId: user.id,
             mainRole: role,
+            secondaryRole: secondary === role ? null : secondary,
             discordName: `TestPlayer#${String(i).padStart(4, "0")}`,
             wantsCaptain: i <= 2, // First 2 players want to be captains
           },
