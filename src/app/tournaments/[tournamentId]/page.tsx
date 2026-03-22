@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth-utils";
+import { fetchRankedData, RankInfo } from "@/lib/riot-api";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -61,6 +62,27 @@ export default async function TournamentDetailPage({
     : [];
 
   const isCaptainsDraft = tournament.teamMode === "CAPTAINS_DRAFT";
+
+  // Fetch ranks server-side for captains draft signups
+  let ranks: Record<string, RankInfo | null> = {};
+  if (isCaptainsDraft && tournament.playerSignups.length > 0) {
+    const signupsWithLinks = tournament.playerSignups.filter((s) => s.opGgLink);
+    const results = await Promise.allSettled(
+      signupsWithLinks.map(async (signup) => {
+        try {
+          const result = await fetchRankedData(signup.opGgLink!);
+          return { userId: signup.userId, rank: result?.rank ?? null };
+        } catch {
+          return { userId: signup.userId, rank: null };
+        }
+      })
+    );
+    for (const r of results) {
+      if (r.status === "fulfilled") {
+        ranks[r.value.userId] = r.value.rank;
+      }
+    }
+  }
 
   const registeredTeamIds = new Set(
     tournament.registrations.map((r) => r.teamId)
@@ -201,6 +223,7 @@ export default async function TournamentDetailPage({
               signups={tournament.playerSignups}
               isOrganizer={isOrganizer}
               canRemove={tournament.status === "REGISTRATION"}
+              ranks={ranks}
             />
           </CardContent>
         </Card>

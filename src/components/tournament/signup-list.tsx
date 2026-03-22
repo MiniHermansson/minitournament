@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -58,44 +58,13 @@ interface SignupListProps {
   tournamentId: string;
   signups: Signup[];
   isOrganizer: boolean;
-  canRemove: boolean; // only during REGISTRATION
+  canRemove: boolean;
+  ranks?: Record<string, RankInfo | null>;
 }
 
-export function SignupList({ tournamentId, signups, isOrganizer, canRemove }: SignupListProps) {
+export function SignupList({ tournamentId, signups, isOrganizer, canRemove, ranks = {} }: SignupListProps) {
   const router = useRouter();
   const [removing, setRemoving] = useState<string | null>(null);
-  const [ranks, setRanks] = useState<Record<string, RankInfo | null>>({});
-
-  const userIdKey = signups.map((s) => s.userId).sort().join(",");
-
-  useEffect(() => {
-    const userIds = signups.map((s) => s.userId);
-    if (userIds.length === 0) return;
-
-    fetch(`/api/tournaments/${tournamentId}/ranks`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userIds }),
-    })
-      .then(async (res) => {
-        if (!res.ok) {
-          const text = await res.text().catch(() => "");
-          console.error(`[ranks] API returned ${res.status}: ${text}`);
-          return null;
-        }
-        return res.json();
-      })
-      .then((data) => {
-        if (data?.ranks) {
-          console.log("[ranks] Received:", data.ranks);
-          setRanks(data.ranks);
-        }
-      })
-      .catch((err) => {
-        console.error("[ranks] Fetch failed:", err);
-      });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tournamentId, userIdKey]);
 
   const handleRemove = async (userId: string) => {
     setRemoving(userId);

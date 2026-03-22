@@ -94,12 +94,14 @@ export default function DraftPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userIds }),
       });
-      if (res.ok) {
-        const data = await res.json();
-        setRanks(data.ranks);
+      if (!res.ok) {
+        console.error("[ranks] API error:", res.status, await res.text().catch(() => ""));
+        return;
       }
-    } catch {
-      // Ranks are non-critical
+      const data = await res.json();
+      if (data.ranks) setRanks(data.ranks);
+    } catch (err) {
+      console.error("[ranks] Fetch error:", err);
     }
   }, [params.tournamentId]);
 
