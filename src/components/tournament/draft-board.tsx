@@ -81,6 +81,7 @@ export function DraftBoard({
   const [picking, setPicking] = useState(false);
   const [finalizing, setFinalizing] = useState(false);
   const [roleFilter, setRoleFilter] = useState<string>("ALL");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const signupByUser = new Map(signups.map((s) => [s.userId, s]));
 
@@ -134,9 +135,19 @@ export function DraftBoard({
     ? draftState.captains.find((c) => c.teamNumber === draftState.nextTeam)
     : null;
 
-  const filteredPlayers = roleFilter === "ALL"
-    ? availablePlayers
-    : availablePlayers.filter((p) => p.mainRole === roleFilter || p.secondaryRole === roleFilter);
+  const filteredPlayers = availablePlayers.filter((p) => {
+    if (roleFilter !== "ALL" && p.mainRole !== roleFilter && p.secondaryRole !== roleFilter) {
+      return false;
+    }
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      return (
+        p.user.name?.toLowerCase().includes(q) ||
+        p.discordName.toLowerCase().includes(q)
+      );
+    }
+    return true;
+  });
 
   return (
     <div className="space-y-6">
@@ -231,23 +242,32 @@ export function DraftBoard({
 
         {/* Player pool */}
         <div className="lg:col-span-2">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-3">
             <h3 className="text-sm font-medium text-muted-foreground">
-              Available Players ({availablePlayers.length})
+              Available Players ({filteredPlayers.length}/{availablePlayers.length})
             </h3>
-            <select
-              value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value)}
-              className="h-8 rounded-lg border border-input bg-background px-2 text-xs"
-            >
-              <option value="ALL">All Roles</option>
-              <option value="TOP">Top</option>
-              <option value="JUNGLE">Jungle</option>
-              <option value="MID">Mid</option>
-              <option value="ADC">ADC</option>
-              <option value="SUPPORT">Support</option>
-              <option value="FILL">Fill</option>
-            </select>
+            <div className="flex items-center gap-2 sm:ml-auto">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search players..."
+                className="h-8 rounded-lg border border-input bg-background px-3 text-xs w-40"
+              />
+              <select
+                value={roleFilter}
+                onChange={(e) => setRoleFilter(e.target.value)}
+                className="h-8 rounded-lg border border-input bg-background px-2 text-xs"
+              >
+                <option value="ALL">All Roles</option>
+                <option value="TOP">Top</option>
+                <option value="JUNGLE">Jungle</option>
+                <option value="MID">Mid</option>
+                <option value="ADC">ADC</option>
+                <option value="SUPPORT">Support</option>
+                <option value="FILL">Fill</option>
+              </select>
+            </div>
           </div>
 
           <div className="space-y-2 max-h-[600px] overflow-y-auto">

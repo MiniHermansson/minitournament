@@ -114,6 +114,14 @@ export default async function TournamentDetailPage({
               Signed Up
             </Badge>
           )}
+          {tournament.status === "DRAFTING" && (
+            <Link
+              href={`/tournaments/${tournament.id}/draft`}
+              className={buttonVariants({ variant: "secondary" })}
+            >
+              Watch Draft
+            </Link>
+          )}
           {isOrganizer && (
             <Link
               href={`/tournaments/${tournament.id}/manage`}
