@@ -309,6 +309,7 @@ model PlayerSignup {
   wantsCaptain  Boolean     @default(false)
   opGgLink      String?
   discordName   String
+  riotPuuid     String?
 
   tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
   user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -316,6 +317,23 @@ model PlayerSignup {
   createdAt DateTime @default(now())
 
   @@unique([tournamentId, userId])
+}
+
+model RankedData {
+  id            String   @id @default(cuid())
+  puuid         String   @unique
+  region        String
+  summonerName  String
+  tagLine       String
+  tier          String?
+  rank          String?
+  lp            Int?
+  wins          Int?
+  losses        Int?
+  previousTiers Json?
+  fetchedAt     DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model DraftState {

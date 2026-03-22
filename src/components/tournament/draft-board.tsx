@@ -1,10 +1,42 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+
+interface RankInfo {
+  tier: string | null;
+  rank: string | null;
+  lp: number | null;
+  wins: number | null;
+  losses: number | null;
+}
+
+const TIER_COLORS: Record<string, string> = {
+  IRON: "bg-gray-500/15 text-gray-400 border-gray-500/30",
+  BRONZE: "bg-amber-700/15 text-amber-600 border-amber-700/30",
+  SILVER: "bg-slate-300/15 text-slate-300 border-slate-300/30",
+  GOLD: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30",
+  PLATINUM: "bg-cyan-400/15 text-cyan-300 border-cyan-400/30",
+  EMERALD: "bg-green-400/15 text-green-300 border-green-400/30",
+  DIAMOND: "bg-blue-400/15 text-blue-300 border-blue-400/30",
+  MASTER: "bg-purple-500/15 text-purple-400 border-purple-500/30",
+  GRANDMASTER: "bg-red-500/15 text-red-400 border-red-500/30",
+  CHALLENGER: "bg-amber-400/15 text-amber-300 border-amber-400/30",
+};
+
+function RankBadge({ rank }: { rank: RankInfo | null | undefined }) {
+  if (!rank || !rank.tier) return null;
+  const colors = TIER_COLORS[rank.tier] ?? "bg-gray-500/15 text-gray-400 border-gray-500/30";
+  const label = `${rank.tier[0]}${rank.tier.slice(1).toLowerCase()} ${rank.rank ?? ""}`.trim();
+  return (
+    <Badge variant="outline" className={`text-xs ${colors}`} title={rank.lp != null ? `${rank.lp} LP · ${rank.wins}W ${rank.losses}L` : undefined}>
+      {label}{rank.lp != null ? ` ${rank.lp}LP` : ""}
+    </Badge>
+  );
+}
 
 interface UserInfo {
   id: string;
@@ -83,8 +115,32 @@ export function DraftBoard({
   const [roleFilter, setRoleFilter] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [undoing, setUndoing] = useState(false);
+  const [ranks, setRanks] = useState<Record<string, RankInfo | null>>({});
 
   const signupByUser = new Map(signups.map((s) => [s.userId, s]));
+
+  const fetchRanks = useCallback(async () => {
+    const userIds = signups.map((s) => s.userId);
+    if (userIds.length === 0) return;
+
+    try {
+      const res = await fetch(`/api/tournaments/${tournamentId}/ranks`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userIds }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setRanks(data.ranks);
+      }
+    } catch {
+      // Ranks are non-critical — silently fail
+    }
+  }, [signups, tournamentId]);
+
+  useEffect(() => {
+    fetchRanks();
+  }, [fetchRanks]);
 
   async function handlePick() {
     if (!selectedPlayer) return;
@@ -240,7 +296,7 @@ export function DraftBoard({
               </CardHeader>
               <CardContent className="px-4 pb-3 space-y-2">
                 {/* Captain */}
-                <div className="flex items-center gap-2 text-sm">
+                <div className="flex items-center gap-2 text-sm flex-wrap">
                   <Badge variant="outline" className="bg-amber-500/15 text-amber-400 border-amber-500/30 text-xs">
                     C
                   </Badge>
@@ -250,12 +306,13 @@ export function DraftBoard({
                       {signupByUser.get(team.captain.userId)!.mainRole}
                     </Badge>
                   )}
+                  <RankBadge rank={ranks[team.captain.userId]} />
                 </div>
                 {/* Drafted players */}
                 {team.players.map((pick) => {
                   const signup = signupByUser.get(pick.userId);
                   return (
-                    <div key={pick.id} className="flex items-center gap-2 text-sm">
+                    <div key={pick.id} className="flex items-center gap-2 text-sm flex-wrap">
                       <span className="text-xs text-muted-foreground w-5">#{pick.pickNumber}</span>
                       <span>{pick.user.name}</span>
                       {signup && (
@@ -263,6 +320,7 @@ export function DraftBoard({
                           {signup.mainRole}
                         </Badge>
                       )}
+                      <RankBadge rank={ranks[pick.userId]} />
                     </div>
                   );
                 })}
@@ -336,6 +394,7 @@ export function DraftBoard({
                         {player.secondaryRole}
                       </Badge>
                     )}
+                    <RankBadge rank={ranks[player.userId]} />
                     {player.opGgLink && (
                       <a
                         href={player.opGgLink}
