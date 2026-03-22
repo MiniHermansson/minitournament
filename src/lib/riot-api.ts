@@ -47,6 +47,7 @@ export interface RankInfo {
  * Parse an op.gg URL into region, gameName, and tagLine.
  * Supports multiple formats:
  *   - https://www.op.gg/summoners/euw/PlayerName-TAG
+ *   - https://op.gg/lol/summoners/euw/PlayerName-TAG
  *   - https://op.gg/lol/summoners/search?q=PlayerName&region=euw
  *   - https://op.gg/lol/summoners/search?q=PlayerName-TAG&region=euw
  */
@@ -90,14 +91,16 @@ export function parseOpGgUrl(url: string): ParsedOpGg | null {
     }
 
     // Format 2: Direct profile URL — /summoners/{region}/{gameName}-{tagLine}
+    // Also handles /lol/summoners/{region}/{gameName}-{tagLine}
     const parts = parsed.pathname.split("/").filter(Boolean);
-    if (parts.length < 3 || parts[0] !== "summoners") return null;
+    const summonersIdx = parts.indexOf("summoners");
+    if (summonersIdx === -1 || parts.length < summonersIdx + 3) return null;
 
-    const region = parts[1].toLowerCase();
+    const region = parts[summonersIdx + 1].toLowerCase();
     const regionInfo = REGION_MAP[region];
     if (!regionInfo) return null;
 
-    const nameAndTag = parts.slice(2).join("/");
+    const nameAndTag = parts.slice(summonersIdx + 2).join("/");
     const lastDash = nameAndTag.lastIndexOf("-");
     if (lastDash <= 0) return null;
 
