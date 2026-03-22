@@ -158,20 +158,9 @@ export async function fetchRankedData(opGgLink: string): Promise<{ puuid: string
     };
   }
 
-  // 2. Get summoner ID from PUUID
-  const summonerRes = await riotFetch(
-    `https://${parsed.platform}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${puuid}`
-  );
-  if (!summonerRes.ok) {
-    console.log(`[riot-api] Summoner lookup failed: ${summonerRes.status}`);
-    return null;
-  }
-  const summonerData = await summonerRes.json();
-  const summonerId = summonerData.id as string;
-
-  // 3. Get ranked entries
+  // 2. Get ranked entries by PUUID directly
   const leagueRes = await riotFetch(
-    `https://${parsed.platform}.api.riotgames.com/lol/league/v4/entries/by-summoner/${summonerId}`
+    `https://${parsed.platform}.api.riotgames.com/lol/league/v4/entries/by-puuid/${puuid}`
   );
   if (!leagueRes.ok) {
     console.log(`[riot-api] League lookup failed: ${leagueRes.status}`);
