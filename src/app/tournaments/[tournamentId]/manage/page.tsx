@@ -57,6 +57,47 @@ const statusTransitions: Record<string, { label: string; next: string }[]> = {
   CANCELLED: [{ label: "Reopen as Draft", next: "DRAFT" }],
 };
 
+interface RankInfo {
+  tier: string | null;
+  rank: string | null;
+  lp: number | null;
+  wins: number | null;
+  losses: number | null;
+}
+
+const TIER_COLORS: Record<string, string> = {
+  IRON: "bg-gray-500/15 text-gray-400 border-gray-500/30",
+  BRONZE: "bg-amber-700/15 text-amber-600 border-amber-700/30",
+  SILVER: "bg-slate-300/15 text-slate-300 border-slate-300/30",
+  GOLD: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30",
+  PLATINUM: "bg-cyan-400/15 text-cyan-300 border-cyan-400/30",
+  EMERALD: "bg-green-400/15 text-green-300 border-green-400/30",
+  DIAMOND: "bg-blue-400/15 text-blue-300 border-blue-400/30",
+  MASTER: "bg-purple-500/15 text-purple-400 border-purple-500/30",
+  GRANDMASTER: "bg-red-500/15 text-red-400 border-red-500/30",
+  CHALLENGER: "bg-amber-400/15 text-amber-300 border-amber-400/30",
+};
+
+const ROLE_COLORS: Record<string, string> = {
+  TOP: "bg-red-500/15 text-red-400 border-red-500/30",
+  JUNGLE: "bg-green-500/15 text-green-400 border-green-500/30",
+  MID: "bg-blue-500/15 text-blue-400 border-blue-500/30",
+  ADC: "bg-amber-500/15 text-amber-400 border-amber-500/30",
+  SUPPORT: "bg-cyan-500/15 text-cyan-400 border-cyan-500/30",
+  FILL: "bg-purple-500/15 text-purple-400 border-purple-500/30",
+};
+
+function RankBadge({ rank }: { rank: RankInfo | null | undefined }) {
+  if (!rank || !rank.tier) return null;
+  const colors = TIER_COLORS[rank.tier] ?? "bg-gray-500/15 text-gray-400 border-gray-500/30";
+  const label = `${rank.tier[0]}${rank.tier.slice(1).toLowerCase()} ${rank.rank ?? ""}`.trim();
+  return (
+    <Badge variant="outline" className={`text-xs ${colors}`} title={rank.lp != null ? `${rank.lp} LP · ${rank.wins}W ${rank.losses}L` : undefined}>
+      {label}{rank.lp != null ? ` ${rank.lp}LP` : ""}
+    </Badge>
+  );
+}
+
 export default function ManageTournamentPage() {
   const params = useParams<{ tournamentId: string }>();
   const router = useRouter();
@@ -68,6 +109,7 @@ export default function ManageTournamentPage() {
   const [coOrgEmail, setCoOrgEmail] = useState("");
   const [coOrgSaving, setCoOrgSaving] = useState(false);
   const [coOrgError, setCoOrgError] = useState("");
+  const [ranks, setRanks] = useState<Record<string, RankInfo | null>>({});
 
   // Format config state (for captains draft — configured after draft)
   const [bestOf, setBestOf] = useState("1");
@@ -91,9 +133,33 @@ export default function ManageTournamentPage() {
     setLoading(false);
   }, [params.tournamentId, session?.user?.id, router]);
 
+  const fetchRanks = useCallback(async (signups: PlayerSignup[]) => {
+    const userIds = signups.map((s) => s.userId);
+    if (userIds.length === 0) return;
+    try {
+      const res = await fetch(`/api/tournaments/${params.tournamentId}/ranks`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userIds }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setRanks(data.ranks);
+      }
+    } catch {
+      // Ranks are non-critical
+    }
+  }, [params.tournamentId]);
+
   useEffect(() => {
     if (session) fetchTournament();
   }, [session, fetchTournament]);
+
+  useEffect(() => {
+    if (tournament?.teamMode === "CAPTAINS_DRAFT" && tournament.playerSignups.length > 0) {
+      fetchRanks(tournament.playerSignups);
+    }
+  }, [tournament?.teamMode, tournament?.playerSignups, fetchRanks]);
 
   async function handleStatusChange(newStatus: string) {
     const res = await fetch(`/api/tournaments/${params.tournamentId}`, {
@@ -414,25 +480,29 @@ export default function ManageTournamentPage() {
                           {signup.discordName}
                         </span>
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        {signup.mainRole}
-                        {signup.secondaryRole ? ` / ${signup.secondaryRole}` : ""}
-                        {signup.opGgLink && (
-                          <>
-                            {" · "}
-                            <a
-                              href={signup.opGgLink}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-primary hover:underline"
-                            >
-                              OP.GG
-                            </a>
-                          </>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge variant="outline" className={`text-xs ${ROLE_COLORS[signup.mainRole] ?? ""}`}>
+                          {signup.mainRole}
+                        </Badge>
+                        {signup.secondaryRole && (
+                          <Badge variant="outline" className="text-xs bg-gray-500/15 text-gray-400 border-gray-500/30">
+                            {signup.secondaryRole}
+                          </Badge>
                         )}
-                      </p>
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
+                      <RankBadge rank={ranks[signup.userId]} />
+                      {signup.opGgLink && (
+                        <a
+                          href={signup.opGgLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-primary hover:underline"
+                        >
+                          OP.GG
+                        </a>
+                      )}
                       {signup.wantsCaptain && (
                         <Badge
                           variant="outline"
