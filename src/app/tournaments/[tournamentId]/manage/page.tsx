@@ -135,7 +135,9 @@ export default function ManageTournamentPage() {
       { method: "POST" }
     );
     if (res.ok) {
-      router.push(`/tournaments/${params.tournamentId}/bracket`);
+      const fmt = tournament?.format;
+      const isGroupFormat = fmt === "ROUND_ROBIN" || fmt === "GROUP_STAGE" || fmt === "GROUP_STAGE_PLAYOFF";
+      router.push(`/tournaments/${params.tournamentId}/${isGroupFormat ? "groups" : "bracket"}`);
     } else {
       const data = await res.json();
       toast.error(data.error);

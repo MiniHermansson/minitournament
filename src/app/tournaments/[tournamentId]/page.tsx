@@ -136,6 +136,20 @@ export default async function TournamentDetailPage({
               Signed Up
             </Badge>
           )}
+          {(tournament.status === "IN_PROGRESS" || tournament.status === "COMPLETED") && (
+            <Link
+              href={`/tournaments/${tournament.id}/${
+                tournament.format === "ROUND_ROBIN" || tournament.format === "GROUP_STAGE" || tournament.format === "GROUP_STAGE_PLAYOFF"
+                  ? "groups"
+                  : "bracket"
+              }`}
+              className={buttonVariants()}
+            >
+              {tournament.format === "ROUND_ROBIN" || tournament.format === "GROUP_STAGE" || tournament.format === "GROUP_STAGE_PLAYOFF"
+                ? "View Groups"
+                : "View Bracket"}
+            </Link>
+          )}
           {tournament.status === "DRAFTING" && (
             <Link
               href={`/tournaments/${tournament.id}/draft`}
