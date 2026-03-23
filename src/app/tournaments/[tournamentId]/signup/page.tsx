@@ -149,7 +149,10 @@ export default function SignupPage() {
               <select
                 id="main-role"
                 value={mainRole}
-                onChange={(e) => setMainRole(e.target.value)}
+                onChange={(e) => {
+                  setMainRole(e.target.value);
+                  if (e.target.value === "FILL") setSecondaryRole("");
+                }}
                 required
                 className="flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
@@ -169,9 +172,10 @@ export default function SignupPage() {
                   id="secondary-role"
                   value={secondaryRole}
                   onChange={(e) => setSecondaryRole(e.target.value)}
+                  required
                   className="flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
-                  <option value="">Select role (optional)...</option>
+                  <option value="">Select role...</option>
                   {SECONDARY_ROLES.filter((r) => r.value !== mainRole).map(
                     (r) => (
                       <option key={r.value} value={r.value}>
@@ -209,7 +213,7 @@ export default function SignupPage() {
             <Button
               type="submit"
               className="w-full"
-              disabled={loading || !mainRole || !discordName}
+              disabled={loading || !mainRole || !discordName || (mainRole !== "FILL" && !secondaryRole)}
             >
               {loading ? "Signing up..." : "Sign Up"}
             </Button>

@@ -74,6 +74,7 @@ describe("createTournamentSchema", () => {
 describe("playerSignupSchema", () => {
   const validSignup = {
     mainRole: "MID",
+    secondaryRole: "SUPPORT",
     discordName: "player#1234",
     wantsCaptain: false,
   };
@@ -82,15 +83,20 @@ describe("playerSignupSchema", () => {
     const result = playerSignupSchema.parse(validSignup);
     expect(result.mainRole).toBe("MID");
     expect(result.discordName).toBe("player#1234");
+    expect(result.secondaryRole).toBe("SUPPORT");
   });
 
   it("accepts all valid roles", () => {
-    const roles = ["TOP", "JUNGLE", "MID", "ADC", "SUPPORT", "FILL"];
+    const roles = ["TOP", "JUNGLE", "MID", "ADC", "SUPPORT"];
     for (const role of roles) {
       expect(() =>
         playerSignupSchema.parse({ ...validSignup, mainRole: role })
       ).not.toThrow();
     }
+    // FILL doesn't need secondaryRole
+    expect(() =>
+      playerSignupSchema.parse({ ...validSignup, mainRole: "FILL", secondaryRole: undefined })
+    ).not.toThrow();
   });
 
   it("rejects invalid role", () => {
@@ -101,7 +107,17 @@ describe("playerSignupSchema", () => {
 
   it("rejects missing discordName", () => {
     expect(() =>
-      playerSignupSchema.parse({ mainRole: "MID", wantsCaptain: false })
+      playerSignupSchema.parse({ mainRole: "MID", secondaryRole: "SUPPORT", wantsCaptain: false })
+    ).toThrow();
+  });
+
+  it("rejects non-FILL role without secondary role", () => {
+    expect(() =>
+      playerSignupSchema.parse({
+        mainRole: "MID",
+        discordName: "player#1234",
+        wantsCaptain: false,
+      })
     ).toThrow();
   });
 
@@ -109,6 +125,7 @@ describe("playerSignupSchema", () => {
     const result = playerSignupSchema.parse({
       ...validSignup,
       mainRole: "FILL",
+      secondaryRole: undefined,
     });
     expect(result.mainRole).toBe("FILL");
     expect(result.secondaryRole).toBeUndefined();

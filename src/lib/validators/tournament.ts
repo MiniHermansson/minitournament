@@ -63,11 +63,14 @@ export const updateRegistrationSchema = z.object({
 
 export const playerSignupSchema = z.object({
   mainRole: z.enum(["TOP", "JUNGLE", "MID", "ADC", "SUPPORT", "FILL"]),
-  secondaryRole: z.enum(["TOP", "JUNGLE", "MID", "ADC", "SUPPORT"]).optional(),
+  secondaryRole: z.enum(["TOP", "JUNGLE", "MID", "ADC", "SUPPORT", "FILL"]).optional(),
   wantsCaptain: z.boolean().default(false),
   opGgLink: z.string().url("Invalid URL").optional().or(z.literal("")),
   discordName: z.string().min(1, "Discord username is required"),
-});
+}).refine(
+  (data) => data.mainRole === "FILL" || data.secondaryRole != null,
+  { message: "Secondary role is required", path: ["secondaryRole"] }
+);
 
 export const draftPickSchema = z.object({
   userId: z.string().min(1),
