@@ -53,6 +53,7 @@ export const createTournamentSchema = z.object({
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),
   formatConfig: z.record(z.string(), z.unknown()).optional(),
+  rules: z.string().max(10000).optional(),
 });
 
 export const updateTournamentSchema = createTournamentSchema.partial();

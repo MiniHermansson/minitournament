@@ -1,25 +1,14 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth-utils";
 import { fetchRankedData, RankInfo } from "@/lib/riot-api";
-import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { StatusBadge } from "@/components/tournament/status-badge";
 import { SignupList } from "@/components/tournament/signup-list";
+import { isOrganizer } from "@/lib/organizer-utils";
 
-const formatLabels: Record<string, string> = {
-  SINGLE_ELIMINATION: "Single Elimination",
-  DOUBLE_ELIMINATION: "Double Elimination",
-  ROUND_ROBIN: "Round Robin",
-  GROUP_STAGE: "Group Stage",
-  GROUP_STAGE_PLAYOFF: "Groups + Playoff",
-};
-
-export default async function TournamentDetailPage({
+export default async function TournamentOverviewPage({
   params,
 }: {
   params: Promise<{ tournamentId: string }>;
@@ -53,14 +42,9 @@ export default async function TournamentDetailPage({
 
   if (!tournament) notFound();
 
-  const isOrganizer = session?.user?.id === tournament.organizerId || session?.user?.id === tournament.coOrganizerId;
-  const userTeams = session
-    ? await prisma.team.findMany({
-        where: { ownerId: session.user.id },
-        select: { id: true, name: true, tag: true },
-      })
-    : [];
-
+  const userIsOrganizer = session?.user
+    ? isOrganizer(tournament, session.user.id)
+    : false;
   const isCaptainsDraft = tournament.teamMode === "CAPTAINS_DRAFT";
 
   // Fetch ranks server-side for captains draft signups
@@ -84,108 +68,8 @@ export default async function TournamentDetailPage({
     }
   }
 
-  const registeredTeamIds = new Set(
-    tournament.registrations.map((r) => r.teamId)
-  );
-  const canRegister =
-    !isCaptainsDraft &&
-    tournament.status === "REGISTRATION" &&
-    session &&
-    userTeams.some((t) => !registeredTeamIds.has(t.id));
-
-  const alreadySignedUp = isCaptainsDraft && session
-    ? tournament.playerSignups.some((s) => s.userId === session.user.id)
-    : false;
-  const canSignUp =
-    isCaptainsDraft &&
-    tournament.status === "REGISTRATION" &&
-    session &&
-    !alreadySignedUp;
-
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex items-start justify-between mb-6">
-        <div>
-          <div className="flex items-center gap-3 mb-1">
-            <h1 className="text-3xl font-bold">{tournament.name}</h1>
-            <StatusBadge status={tournament.status} />
-          </div>
-          <p className="text-muted-foreground">
-            {formatLabels[tournament.format]}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          {canRegister && (
-            <Link
-              href={`/tournaments/${tournament.id}/register`}
-              className={buttonVariants()}
-            >
-              Register Team
-            </Link>
-          )}
-          {canSignUp && (
-            <Link
-              href={`/tournaments/${tournament.id}/signup`}
-              className={buttonVariants()}
-            >
-              Sign Up
-            </Link>
-          )}
-          {alreadySignedUp && (
-            <Badge variant="outline" className="bg-green-500/15 text-green-400 border-green-500/30">
-              Signed Up
-            </Badge>
-          )}
-          {(tournament.status === "IN_PROGRESS" || tournament.status === "COMPLETED") && (
-            <Link
-              href={`/tournaments/${tournament.id}/${
-                tournament.format === "ROUND_ROBIN" || tournament.format === "GROUP_STAGE" || tournament.format === "GROUP_STAGE_PLAYOFF"
-                  ? "groups"
-                  : "bracket"
-              }`}
-              className={buttonVariants()}
-            >
-              {tournament.format === "ROUND_ROBIN" || tournament.format === "GROUP_STAGE" || tournament.format === "GROUP_STAGE_PLAYOFF"
-                ? "View Groups"
-                : "View Bracket"}
-            </Link>
-          )}
-          {tournament.status === "DRAFTING" && (
-            <Link
-              href={`/tournaments/${tournament.id}/draft`}
-              className={buttonVariants({ variant: "secondary" })}
-            >
-              Watch Draft
-            </Link>
-          )}
-          {isOrganizer && (
-            <Link
-              href={`/tournaments/${tournament.id}/manage`}
-              className={buttonVariants({ variant: "outline" })}
-            >
-              Manage
-            </Link>
-          )}
-        </div>
-      </div>
-
-      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
-        <span>Organized by</span>
-        <Avatar className="h-5 w-5">
-          <AvatarImage src={tournament.organizer.image ?? undefined} />
-          <AvatarFallback className="text-xs">
-            {tournament.organizer.name?.[0]?.toUpperCase() ?? "?"}
-          </AvatarFallback>
-        </Avatar>
-        <span>{tournament.organizer.name}</span>
-      </div>
-
-      {tournament.description && (
-        <p className="text-sm mb-6 whitespace-pre-wrap">
-          {tournament.description}
-        </p>
-      )}
-
+    <>
       <div className="grid gap-4 sm:grid-cols-3 mb-6">
         <Card>
           <CardContent className="pt-4">
@@ -207,7 +91,9 @@ export default async function TournamentDetailPage({
         <Card>
           <CardContent className="pt-4">
             <p className="text-sm text-muted-foreground">Team Size</p>
-            <p className="text-2xl font-bold">{tournament.teamSize}v{tournament.teamSize}</p>
+            <p className="text-2xl font-bold">
+              {tournament.teamSize}v{tournament.teamSize}
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -222,8 +108,6 @@ export default async function TournamentDetailPage({
         </Card>
       </div>
 
-      <Separator className="mb-6" />
-
       {isCaptainsDraft ? (
         <Card>
           <CardHeader>
@@ -235,7 +119,7 @@ export default async function TournamentDetailPage({
             <SignupList
               tournamentId={tournament.id}
               signups={tournament.playerSignups}
-              isOrganizer={isOrganizer}
+              isOrganizer={userIsOrganizer}
               canRemove={tournament.status === "REGISTRATION"}
               ranks={ranks}
             />
@@ -292,6 +176,6 @@ export default async function TournamentDetailPage({
           </CardContent>
         </Card>
       )}
-    </div>
+    </>
   );
 }

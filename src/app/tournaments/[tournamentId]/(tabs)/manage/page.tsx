@@ -10,7 +10,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { StatusBadge } from "@/components/tournament/status-badge";
 
 interface Registration {
   id: string;
@@ -258,11 +257,9 @@ export default function ManageTournamentPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 w-48 bg-muted rounded" />
-          <div className="h-64 bg-muted rounded" />
-        </div>
+      <div className="animate-pulse space-y-4">
+        <div className="h-8 w-48 bg-muted rounded" />
+        <div className="h-64 bg-muted rounded" />
       </div>
     );
   }
@@ -274,20 +271,7 @@ export default function ManageTournamentPage() {
   const acceptedTeams = tournament.registrations.filter((r) => r.status === "ACCEPTED").length;
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-3xl">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold mb-1">{tournament.name}</h1>
-          <div className="flex gap-2">
-            <StatusBadge status={tournament.status} />
-            {isCaptainsDraft && (
-              <Badge variant="outline" className="bg-purple-500/15 text-purple-400 border-purple-500/30">
-                Captains Draft
-              </Badge>
-            )}
-          </div>
-        </div>
-      </div>
+    <div className="max-w-3xl">
 
       {/* Status transitions */}
       {transitions.length > 0 && (

@@ -158,6 +158,7 @@ model Tournament {
   endDate           DateTime?
 
   formatConfig Json?
+  rules        String?          @db.Text
 
   teamMode TeamMode @default(PRE_MADE)
 

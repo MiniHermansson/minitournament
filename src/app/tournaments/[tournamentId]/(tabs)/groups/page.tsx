@@ -63,18 +63,11 @@ export default function GroupsPage() {
   }
 
   if (loading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="animate-pulse h-64 bg-muted rounded" />
-      </div>
-    );
+    return <div className="animate-pulse h-64 bg-muted rounded" />;
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-2">{tournament?.name}</h1>
-      <p className="text-muted-foreground mb-6">Group Stage</p>
-
+    <>
       {groups.length === 0 ? (
         <p className="text-center text-muted-foreground py-12">
           Groups not generated yet.
@@ -105,6 +98,6 @@ export default function GroupsPage() {
           </div>
         </>
       )}
-    </div>
+    </>
   );
 }

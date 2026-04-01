@@ -137,6 +137,7 @@ export async function PATCH(
         ...(data.endDate !== undefined && {
           endDate: data.endDate ? new Date(data.endDate) : null,
         }),
+        ...(data.rules !== undefined && { rules: data.rules || null }),
       },
     });
 
