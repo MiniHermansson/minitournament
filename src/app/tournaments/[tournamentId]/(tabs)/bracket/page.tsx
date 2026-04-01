@@ -1,50 +1,41 @@
-"use client";
-
-import { useEffect, useState, useCallback } from "react";
-import { useParams } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { notFound } from "next/navigation";
+import { prisma } from "@/lib/prisma";
+import { getSession } from "@/lib/auth-utils";
+import { getTournament } from "@/lib/tournament-cache";
+import { isOrganizer } from "@/lib/organizer-utils";
 import { BracketView } from "@/components/tournament/bracket-view";
 
-interface TournamentInfo {
-  organizerId: string;
-  coOrganizerId: string | null;
-  name: string;
-  status: string;
-}
+export default async function BracketPage({
+  params,
+}: {
+  params: Promise<{ tournamentId: string }>;
+}) {
+  const { tournamentId } = await params;
+  const [session, tournament, brackets] = await Promise.all([
+    getSession(),
+    getTournament(tournamentId),
+    prisma.bracket.findMany({
+      where: { tournamentId },
+      include: {
+        matches: {
+          include: {
+            homeTeam: { select: { id: true, name: true, tag: true } },
+            awayTeam: { select: { id: true, name: true, tag: true } },
+            winner: { select: { id: true, name: true, tag: true } },
+            games: { orderBy: { gameNumber: "asc" } },
+          },
+          orderBy: [{ round: "asc" }, { position: "asc" }],
+        },
+      },
+      orderBy: { type: "asc" },
+    }),
+  ]);
 
-export default function BracketPage() {
-  const params = useParams<{ tournamentId: string }>();
-  const { data: session } = useSession();
-  const [brackets, setBrackets] = useState<any[]>([]);
-  const [tournament, setTournament] = useState<TournamentInfo | null>(null);
-  const [loading, setLoading] = useState(true);
+  if (!tournament) notFound();
 
-  const fetchData = useCallback(async () => {
-    const [bracketRes, tournamentRes] = await Promise.all([
-      fetch(`/api/tournaments/${params.tournamentId}/bracket`),
-      fetch(`/api/tournaments/${params.tournamentId}`),
-    ]);
-
-    if (bracketRes.ok) {
-      const data = await bracketRes.json();
-      setBrackets(data.brackets);
-    }
-    if (tournamentRes.ok) {
-      const data = await tournamentRes.json();
-      setTournament(data.tournament);
-    }
-    setLoading(false);
-  }, [params.tournamentId]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  if (loading) {
-    return <div className="animate-pulse h-64 bg-muted rounded" />;
-  }
-
-  const isOrganizer = session?.user?.id === tournament?.organizerId || session?.user?.id === tournament?.coOrganizerId;
+  const userIsOrganizer = session?.user
+    ? isOrganizer(tournament, session.user.id)
+    : false;
 
   return (
     <>
@@ -55,9 +46,8 @@ export default function BracketPage() {
       ) : (
         <BracketView
           brackets={brackets}
-          isOrganizer={isOrganizer}
-          tournamentId={params.tournamentId}
-          onResultSubmitted={fetchData}
+          isOrganizer={userIsOrganizer}
+          tournamentId={tournamentId}
         />
       )}
     </>

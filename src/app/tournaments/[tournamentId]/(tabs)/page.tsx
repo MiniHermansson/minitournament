@@ -1,12 +1,11 @@
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth-utils";
-import { fetchRankedData, RankInfo } from "@/lib/riot-api";
+import { isOrganizer } from "@/lib/organizer-utils";
+import { getTournament } from "@/lib/tournament-cache";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { SignupList } from "@/components/tournament/signup-list";
-import { isOrganizer } from "@/lib/organizer-utils";
 
 export default async function TournamentOverviewPage({
   params,
@@ -16,57 +15,13 @@ export default async function TournamentOverviewPage({
   const { tournamentId } = await params;
   const session = await getSession();
 
-  const tournament = await prisma.tournament.findUnique({
-    where: { id: tournamentId },
-    include: {
-      organizer: { select: { id: true, name: true, image: true } },
-      registrations: {
-        include: {
-          team: {
-            include: {
-              owner: { select: { id: true, name: true } },
-              _count: { select: { members: true } },
-            },
-          },
-        },
-        orderBy: { createdAt: "asc" },
-      },
-      playerSignups: {
-        include: {
-          user: { select: { id: true, name: true, image: true } },
-        },
-        orderBy: { createdAt: "asc" },
-      },
-    },
-  });
-
+  const tournament = await getTournament(tournamentId);
   if (!tournament) notFound();
 
   const userIsOrganizer = session?.user
     ? isOrganizer(tournament, session.user.id)
     : false;
   const isCaptainsDraft = tournament.teamMode === "CAPTAINS_DRAFT";
-
-  // Fetch ranks server-side for captains draft signups
-  let ranks: Record<string, RankInfo | null> = {};
-  if (isCaptainsDraft && tournament.playerSignups.length > 0) {
-    const signupsWithLinks = tournament.playerSignups.filter((s) => s.opGgLink);
-    const results = await Promise.allSettled(
-      signupsWithLinks.map(async (signup) => {
-        try {
-          const result = await fetchRankedData(signup.opGgLink!);
-          return { userId: signup.userId, rank: result?.rank ?? null };
-        } catch {
-          return { userId: signup.userId, rank: null };
-        }
-      })
-    );
-    for (const r of results) {
-      if (r.status === "fulfilled") {
-        ranks[r.value.userId] = r.value.rank;
-      }
-    }
-  }
 
   return (
     <>
@@ -121,7 +76,6 @@ export default async function TournamentOverviewPage({
               signups={tournament.playerSignups}
               isOrganizer={userIsOrganizer}
               canRemove={tournament.status === "REGISTRATION"}
-              ranks={ranks}
             />
           </CardContent>
         </Card>

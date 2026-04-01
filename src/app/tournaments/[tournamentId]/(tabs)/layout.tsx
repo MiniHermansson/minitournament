@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth-utils";
 import { isOrganizer } from "@/lib/organizer-utils";
+import { getTournament } from "@/lib/tournament-cache";
 import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { StatusBadge } from "@/components/tournament/status-badge";
 import { TournamentTabs } from "@/components/tournament/tournament-tabs";
+import { prisma } from "@/lib/prisma";
 
 export default async function TournamentTabsLayout({
   children,
@@ -19,22 +20,7 @@ export default async function TournamentTabsLayout({
   const { tournamentId } = await params;
   const session = await getSession();
 
-  const tournament = await prisma.tournament.findUnique({
-    where: { id: tournamentId },
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      status: true,
-      format: true,
-      teamMode: true,
-      organizerId: true,
-      coOrganizerId: true,
-      organizer: { select: { name: true, image: true } },
-      _count: { select: { groups: true, brackets: true } },
-    },
-  });
-
+  const tournament = await getTournament(tournamentId);
   if (!tournament) notFound();
 
   const userIsOrganizer = session?.user
@@ -74,12 +60,7 @@ export default async function TournamentTabsLayout({
   const registeredTeamIds = isCaptainsDraft
     ? new Set<string>()
     : new Set(
-        (
-          await prisma.tournamentRegistration.findMany({
-            where: { tournamentId },
-            select: { teamId: true },
-          })
-        ).map((r) => r.teamId)
+        tournament.registrations.map((r) => r.teamId)
       );
 
   const canRegister =
@@ -90,9 +71,7 @@ export default async function TournamentTabsLayout({
 
   const alreadySignedUp =
     isCaptainsDraft && session
-      ? !!(await prisma.playerSignup.findFirst({
-          where: { tournamentId, userId: session.user.id },
-        }))
+      ? tournament.playerSignups.some((s) => s.userId === session.user.id)
       : false;
 
   const canSignUp =

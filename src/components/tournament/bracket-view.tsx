@@ -1,5 +1,7 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+
 interface Team {
   id: string;
   name: string;
@@ -30,15 +32,16 @@ interface BracketViewProps {
   brackets: Bracket[];
   isOrganizer: boolean;
   tournamentId: string;
-  onResultSubmitted?: () => void;
 }
 
 export function BracketView({
   brackets,
   isOrganizer,
   tournamentId,
-  onResultSubmitted,
 }: BracketViewProps) {
+  const router = useRouter();
+  const onResultSubmitted = () => router.refresh();
+
   const winnersBracket = brackets.find((b) => b.type === "WINNERS");
   const losersBracket = brackets.find((b) => b.type === "LOSERS");
   const grandFinal = brackets.find((b) => b.type === "GRAND_FINAL");

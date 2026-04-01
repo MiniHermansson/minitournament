@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -59,12 +59,31 @@ interface SignupListProps {
   signups: Signup[];
   isOrganizer: boolean;
   canRemove: boolean;
-  ranks?: Record<string, RankInfo | null>;
 }
 
-export function SignupList({ tournamentId, signups, isOrganizer, canRemove, ranks = {} }: SignupListProps) {
+export function SignupList({ tournamentId, signups, isOrganizer, canRemove }: SignupListProps) {
   const router = useRouter();
   const [removing, setRemoving] = useState<string | null>(null);
+  const [ranks, setRanks] = useState<Record<string, RankInfo | null>>({});
+
+  // Lazy-load ranks on the client after initial render
+  useEffect(() => {
+    const userIds = signups
+      .filter((s) => s.opGgLink)
+      .map((s) => s.userId);
+    if (userIds.length === 0) return;
+
+    fetch(`/api/tournaments/${tournamentId}/ranks`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userIds }),
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.ranks) setRanks(data.ranks);
+      })
+      .catch(() => {});
+  }, [tournamentId, signups]);
 
   const handleRemove = async (userId: string) => {
     setRemoving(userId);

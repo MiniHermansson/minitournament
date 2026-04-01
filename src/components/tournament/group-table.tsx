@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import {
   Table,
   TableBody,
@@ -41,15 +42,15 @@ interface GroupTableProps {
   group: GroupData;
   isOrganizer: boolean;
   tournamentId: string;
-  onResultSubmitted?: () => void;
 }
 
 export function GroupTable({
   group,
   isOrganizer,
   tournamentId,
-  onResultSubmitted,
 }: GroupTableProps) {
+  const router = useRouter();
+
   async function submitWinner(matchId: string, winnerId: string) {
     const res = await fetch(
       `/api/tournaments/${tournamentId}/matches/${matchId}/result`,
@@ -62,7 +63,7 @@ export function GroupTable({
         }),
       }
     );
-    if (res.ok) onResultSubmitted?.();
+    if (res.ok) router.refresh();
   }
 
   return (

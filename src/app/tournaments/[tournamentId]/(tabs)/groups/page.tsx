@@ -1,70 +1,67 @@
-"use client";
-
-import { useEffect, useState, useCallback } from "react";
-import { useParams } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { notFound } from "next/navigation";
+import { prisma } from "@/lib/prisma";
+import { getSession } from "@/lib/auth-utils";
+import { getTournament } from "@/lib/tournament-cache";
+import { isOrganizer } from "@/lib/organizer-utils";
 import { GroupTable } from "@/components/tournament/group-table";
-import { Button } from "@/components/ui/button";
+import { GeneratePlayoffBanner } from "@/components/tournament/generate-playoff-banner";
 
-interface TournamentInfo {
-  organizerId: string;
-  coOrganizerId: string | null;
-  name: string;
-  status: string;
-  format: string;
-}
+export default async function GroupsPage({
+  params,
+}: {
+  params: Promise<{ tournamentId: string }>;
+}) {
+  const { tournamentId } = await params;
+  const [session, tournament, groups] = await Promise.all([
+    getSession(),
+    getTournament(tournamentId),
+    prisma.group.findMany({
+      where: { tournamentId },
+      include: {
+        teams: {
+          include: { group: true },
+          orderBy: { points: "desc" },
+        },
+        matches: {
+          include: {
+            homeTeam: { select: { id: true, name: true, tag: true } },
+            awayTeam: { select: { id: true, name: true, tag: true } },
+            winner: { select: { id: true, name: true, tag: true } },
+          },
+          orderBy: [{ round: "asc" }, { position: "asc" }],
+        },
+      },
+      orderBy: { name: "asc" },
+    }),
+  ]);
 
-export default function GroupsPage() {
-  const params = useParams<{ tournamentId: string }>();
-  const { data: session } = useSession();
-  const [groups, setGroups] = useState<any[]>([]);
-  const [tournament, setTournament] = useState<TournamentInfo | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [generating, setGenerating] = useState(false);
+  if (!tournament) notFound();
 
-  const fetchData = useCallback(async () => {
-    const [groupsRes, tournamentRes] = await Promise.all([
-      fetch(`/api/tournaments/${params.tournamentId}/groups`),
-      fetch(`/api/tournaments/${params.tournamentId}`),
-    ]);
+  // Resolve team names for standings
+  const teamIds = groups.flatMap((g) => g.teams.map((t) => t.teamId));
+  const teams = await prisma.team.findMany({
+    where: { id: { in: teamIds } },
+    select: { id: true, name: true, tag: true },
+  });
+  const teamMap = new Map(teams.map((t) => [t.id, t]));
 
-    if (groupsRes.ok) {
-      const data = await groupsRes.json();
-      setGroups(data.groups);
-    }
-    if (tournamentRes.ok) {
-      const data = await tournamentRes.json();
-      setTournament(data.tournament);
-    }
-    setLoading(false);
-  }, [params.tournamentId]);
+  const groupsWithTeamInfo = groups.map((group) => ({
+    ...group,
+    teams: group.teams
+      .map((gt) => ({
+        ...gt,
+        team: teamMap.get(gt.teamId),
+      }))
+      .sort((a, b) => b.points - a.points || b.wins - a.wins || a.losses - b.losses),
+  }));
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  const isOrganizer = session?.user?.id === tournament?.organizerId || session?.user?.id === tournament?.coOrganizerId;
-  const isGroupPlayoff = tournament?.format === "GROUP_STAGE_PLAYOFF";
-
-  const allGroupMatchesComplete = groups.every((g: any) =>
-    g.matches.every((m: any) => m.status === "COMPLETED")
+  const userIsOrganizer = session?.user
+    ? isOrganizer(tournament, session.user.id)
+    : false;
+  const isGroupPlayoff = tournament.format === "GROUP_STAGE_PLAYOFF";
+  const allGroupMatchesComplete = groups.every((g) =>
+    g.matches.every((m) => m.status === "COMPLETED")
   );
-
-  async function generatePlayoff() {
-    setGenerating(true);
-    const res = await fetch(
-      `/api/tournaments/${params.tournamentId}/groups`,
-      { method: "POST" }
-    );
-    if (res.ok) {
-      fetchData();
-    }
-    setGenerating(false);
-  }
-
-  if (loading) {
-    return <div className="animate-pulse h-64 bg-muted rounded" />;
-  }
 
   return (
     <>
@@ -74,25 +71,17 @@ export default function GroupsPage() {
         </p>
       ) : (
         <>
-          {isOrganizer && isGroupPlayoff && allGroupMatchesComplete && (
-            <div className="mb-6 rounded-lg border border-primary/30 bg-primary/5 p-4 flex items-center justify-between">
-              <p className="text-sm">
-                All group matches are complete. Generate the playoff bracket?
-              </p>
-              <Button onClick={generatePlayoff} disabled={generating}>
-                {generating ? "Generating..." : "Generate Playoff Bracket"}
-              </Button>
-            </div>
+          {userIsOrganizer && isGroupPlayoff && allGroupMatchesComplete && (
+            <GeneratePlayoffBanner tournamentId={tournamentId} />
           )}
 
           <div className="grid gap-6 lg:grid-cols-2">
-            {groups.map((group: any) => (
+            {groupsWithTeamInfo.map((group) => (
               <GroupTable
                 key={group.id}
                 group={group}
-                isOrganizer={isOrganizer}
-                tournamentId={params.tournamentId}
-                onResultSubmitted={fetchData}
+                isOrganizer={userIsOrganizer}
+                tournamentId={tournamentId}
               />
             ))}
           </div>
