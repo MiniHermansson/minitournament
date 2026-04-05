@@ -137,6 +137,7 @@ enum TournamentStatus {
   IN_PROGRESS
   COMPLETED
   CANCELLED
+  ARCHIVED
 }
 
 model Tournament {

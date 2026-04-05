@@ -16,10 +16,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ThemeToggle } from "./theme-toggle";
 
-const NAV_LINKS = [
-  { href: "/tournaments", label: "Tournaments" },
-  { href: "/teams", label: "Teams" },
-];
+const NAV_LINKS: { href: string; label: string }[] = [];
 
 export function Navbar() {
   const { data: session, status } = useSession();
@@ -105,9 +102,6 @@ export function Navbar() {
                 </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>
-                  <Link href="/dashboard" className="w-full">Dashboard</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
                   <Link href="/settings" className="w-full">Settings</Link>
                 </DropdownMenuItem>
                 {["ADMIN", "SUPER_ADMIN"].includes(
@@ -159,17 +153,6 @@ export function Navbar() {
             ))}
             {session?.user && (
               <>
-                <Link
-                  href="/dashboard"
-                  onClick={() => setMobileOpen(false)}
-                  className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-muted/50 ${
-                    pathname === "/dashboard"
-                      ? "text-foreground bg-muted/30"
-                      : "text-muted-foreground"
-                  }`}
-                >
-                  Dashboard
-                </Link>
                 <Link
                   href="/settings"
                   onClick={() => setMobileOpen(false)}

@@ -169,7 +169,7 @@ function MatchCard({
     const games = [{ gameNumber: 1, winnerId }];
 
     const res = await fetch(
-      `/api/tournaments/${tournamentId}/matches/${match.id}/result`,
+      `/api/tournament/matches/${match.id}/result`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

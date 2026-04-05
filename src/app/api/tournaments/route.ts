@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth-utils";
+import { requireAdmin } from "@/lib/admin-utils";
 import { createTournamentSchema } from "@/lib/validators/tournament";
+import { resolveActiveTournamentId } from "@/lib/active-tournament";
 import { z } from "zod";
 
 export const runtime = "nodejs";
@@ -38,10 +39,19 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const { error, session } = await requireAuth();
+  const { error, session } = await requireAdmin();
   if (error) return error;
 
   try {
+    // Enforce single active tournament
+    const activeId = await resolveActiveTournamentId();
+    if (activeId) {
+      return NextResponse.json(
+        { error: "An active tournament already exists. Archive it first." },
+        { status: 409 }
+      );
+    }
+
     const body = await req.json();
     const data = createTournamentSchema.parse(body);
 

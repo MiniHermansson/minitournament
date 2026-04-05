@@ -53,7 +53,7 @@ export function GroupTable({
 
   async function submitWinner(matchId: string, winnerId: string) {
     const res = await fetch(
-      `/api/tournaments/${tournamentId}/matches/${matchId}/result`,
+      `/api/tournament/matches/${matchId}/result`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

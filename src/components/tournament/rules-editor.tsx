@@ -20,7 +20,7 @@ export function RulesEditor({ tournamentId, rules, isOrganizer }: RulesEditorPro
 
   async function handleSave() {
     setSaving(true);
-    const res = await fetch(`/api/tournaments/${tournamentId}`, {
+    const res = await fetch(`/api/tournament`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ rules: editRules }),

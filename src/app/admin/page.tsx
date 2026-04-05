@@ -62,7 +62,7 @@ export default function AdminPage() {
     const params = search ? `?search=${encodeURIComponent(search)}` : "";
     const res = await fetch(`/api/admin/users${params}`);
     if (res.status === 403) {
-      router.push("/dashboard");
+      router.push("/");
       return;
     }
     if (res.ok) {

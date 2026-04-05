@@ -10,7 +10,7 @@ export function GeneratePlayoffBanner({ tournamentId }: { tournamentId: string }
 
   async function generatePlayoff() {
     setGenerating(true);
-    const res = await fetch(`/api/tournaments/${tournamentId}/groups`, {
+    const res = await fetch(`/api/tournament/groups`, {
       method: "POST",
     });
     if (res.ok) {

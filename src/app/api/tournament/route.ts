@@ -1,16 +1,17 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, isOrganizer } from "@/lib/auth-utils";
+import { resolveActiveTournamentId } from "@/lib/active-tournament";
 import { updateTournamentSchema } from "@/lib/validators/tournament";
 import { z } from "zod";
 
 export const runtime = "nodejs";
 
-export async function GET(
-  _req: Request,
-  { params }: { params: Promise<{ tournamentId: string }> }
-) {
-  const { tournamentId } = await params;
+export async function GET() {
+  const tournamentId = await resolveActiveTournamentId();
+  if (!tournamentId) {
+    return NextResponse.json({ error: "No active tournament" }, { status: 404 });
+  }
 
   const tournament = await prisma.tournament.findUnique({
     where: { id: tournamentId },
@@ -38,20 +39,17 @@ export async function GET(
     },
   });
 
-  if (!tournament) {
-    return NextResponse.json({ error: "Tournament not found" }, { status: 404 });
-  }
-
   return NextResponse.json({ tournament });
 }
 
-export async function PATCH(
-  req: Request,
-  { params }: { params: Promise<{ tournamentId: string }> }
-) {
-  const { tournamentId } = await params;
+export async function PATCH(req: Request) {
   const { error, session } = await requireAuth();
   if (error) return error;
+
+  const tournamentId = await resolveActiveTournamentId();
+  if (!tournamentId) {
+    return NextResponse.json({ error: "No active tournament" }, { status: 404 });
+  }
 
   const tournament = await prisma.tournament.findUnique({
     where: { id: tournamentId },
@@ -67,7 +65,6 @@ export async function PATCH(
   try {
     const body = await req.json();
 
-    // Handle status transitions
     if (body.status) {
       const validTransitions: Record<string, string[]> = {
         DRAFT: ["REGISTRATION", "CANCELLED"],
@@ -92,7 +89,6 @@ export async function PATCH(
       return NextResponse.json({ tournament: updated });
     }
 
-    // Handle co-organizer email
     if ("coOrganizerEmail" in body) {
       let coOrganizerId: string | null = null;
       if (body.coOrganizerEmail) {
@@ -150,13 +146,14 @@ export async function PATCH(
   }
 }
 
-export async function DELETE(
-  _req: Request,
-  { params }: { params: Promise<{ tournamentId: string }> }
-) {
-  const { tournamentId } = await params;
+export async function DELETE() {
   const { error, session } = await requireAuth();
   if (error) return error;
+
+  const tournamentId = await resolveActiveTournamentId();
+  if (!tournamentId) {
+    return NextResponse.json({ error: "No active tournament" }, { status: 404 });
+  }
 
   const tournament = await prisma.tournament.findUnique({
     where: { id: tournamentId },

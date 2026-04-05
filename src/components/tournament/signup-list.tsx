@@ -73,7 +73,7 @@ export function SignupList({ tournamentId, signups, isOrganizer, canRemove }: Si
       .map((s) => s.userId);
     if (userIds.length === 0) return;
 
-    fetch(`/api/tournaments/${tournamentId}/ranks`, {
+    fetch(`/api/tournament/ranks`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userIds }),
@@ -88,7 +88,7 @@ export function SignupList({ tournamentId, signups, isOrganizer, canRemove }: Si
   const handleRemove = async (userId: string) => {
     setRemoving(userId);
     const res = await fetch(
-      `/api/tournaments/${tournamentId}/signup?userId=${userId}`,
+      `/api/tournament/signup?userId=${userId}`,
       { method: "DELETE" }
     );
 

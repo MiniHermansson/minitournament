@@ -124,7 +124,7 @@ export function DraftBoard({
     if (userIds.length === 0) return;
 
     try {
-      const res = await fetch(`/api/tournaments/${tournamentId}/ranks`, {
+      const res = await fetch(`/api/tournament/ranks`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userIds }),
@@ -146,7 +146,7 @@ export function DraftBoard({
     if (!selectedPlayer) return;
     setPicking(true);
 
-    const res = await fetch(`/api/tournaments/${tournamentId}/draft/pick`, {
+    const res = await fetch(`/api/tournament/draft/pick`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId: selectedPlayer }),
@@ -164,7 +164,7 @@ export function DraftBoard({
 
   async function handleUndo() {
     setUndoing(true);
-    const res = await fetch(`/api/tournaments/${tournamentId}/draft/pick`, {
+    const res = await fetch(`/api/tournament/draft/pick`, {
       method: "DELETE",
     });
 
@@ -182,7 +182,7 @@ export function DraftBoard({
     if (!confirm("Finalize the draft? This will create teams and cannot be undone.")) return;
     setFinalizing(true);
 
-    const res = await fetch(`/api/tournaments/${tournamentId}/draft/finalize`, {
+    const res = await fetch(`/api/tournament/draft/finalize`, {
       method: "POST",
     });
 

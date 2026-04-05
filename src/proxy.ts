@@ -17,15 +17,12 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/dashboard",
     "/settings",
-    "/admin",
-    "/tournaments/new",
-    "/tournaments/:path*/manage",
-    "/tournaments/:path*/draft",
-    "/tournaments/:path*/signup",
-    "/tournaments/:path*/register",
-    "/teams/new",
+    "/admin/:path*",
+    "/manage",
+    "/draft",
+    "/signup",
+    "/register-team",
     "/teams/:path*/manage",
   ],
 };
