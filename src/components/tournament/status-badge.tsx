@@ -7,6 +7,7 @@ const statusStyles: Record<string, { label: string; className: string }> = {
   IN_PROGRESS: { label: "In Progress", className: "bg-amber-500/15 text-amber-400 border-amber-500/30" },
   COMPLETED: { label: "Completed", className: "bg-blue-500/15 text-blue-400 border-blue-500/30" },
   CANCELLED: { label: "Cancelled", className: "bg-red-500/15 text-red-400 border-red-500/30" },
+  ARCHIVED: { label: "Archived", className: "bg-zinc-500/15 text-zinc-400 border-zinc-500/30" },
 };
 
 export function StatusBadge({ status }: { status: string }) {

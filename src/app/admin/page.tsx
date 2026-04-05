@@ -3,8 +3,9 @@
 import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -171,8 +172,18 @@ export default function AdminPage() {
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-8">
-      <h1 className="text-3xl font-bold mb-2">Admin Panel</h1>
-      <p className="text-muted-foreground mb-8">Manage users and permissions</p>
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-bold mb-1">Admin Panel</h1>
+          <p className="text-muted-foreground">Manage users and permissions</p>
+        </div>
+        <Link
+          href="/admin/archived"
+          className={buttonVariants({ variant: "outline" })}
+        >
+          Archived Tournaments
+        </Link>
+      </div>
 
       {/* Seed Test Players */}
       <Card className="mb-6">
