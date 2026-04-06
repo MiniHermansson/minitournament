@@ -241,8 +241,10 @@ export default function ManageTournamentPage() {
     if (res.ok) {
       if (createNew) {
         router.push("/admin/tournament/new");
+        router.refresh();
       } else {
         router.push("/");
+        router.refresh();
       }
     } else {
       const data = await res.json();
