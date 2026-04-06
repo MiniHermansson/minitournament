@@ -10,14 +10,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 
 interface UserData {
   id: string;
@@ -43,12 +35,6 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
-
-  // Dialog state
-  const [dialogType, setDialogType] = useState<"password" | "email" | null>(null);
-  const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
-  const [dialogValue, setDialogValue] = useState("");
-  const [submitting, setSubmitting] = useState(false);
 
   // Seed state
   const [seedTournamentId, setSeedTournamentId] = useState("");
@@ -80,42 +66,6 @@ export default function AdminPage() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setSearch(searchInput);
-  };
-
-  const openDialog = (user: UserData, type: "password" | "email") => {
-    setSelectedUser(user);
-    setDialogType(type);
-    setDialogValue("");
-  };
-
-  const handleDialogSubmit = async () => {
-    if (!selectedUser || !dialogType) return;
-    setSubmitting(true);
-
-    const body =
-      dialogType === "password"
-        ? { action: "resetPassword", newPassword: dialogValue }
-        : { action: "changeEmail", newEmail: dialogValue };
-
-    const res = await fetch(`/api/admin/users/${selectedUser.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-
-    const data = await res.json();
-    if (!res.ok) {
-      toast.error(data.error);
-    } else {
-      toast.success(
-        dialogType === "password"
-          ? `Password reset for ${selectedUser.name || selectedUser.email}`
-          : `Email changed to ${dialogValue}`
-      );
-      setDialogType(null);
-      fetchUsers();
-    }
-    setSubmitting(false);
   };
 
   const handleSeed = async (e: React.FormEvent) => {
@@ -193,7 +143,7 @@ export default function AdminPage() {
         <CardContent>
           <p className="text-sm text-muted-foreground mb-4">
             Create dummy users and sign them up for a captains draft tournament for testing.
-            Password for all test users: <code className="bg-muted px-1 py-0.5 rounded">testpass123</code>
+            These users exist in the database only and cannot log in.
           </p>
           <form onSubmit={handleSeed} className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1">
@@ -298,24 +248,6 @@ export default function AdminPage() {
                   </div>
 
                   <div className="flex flex-wrap gap-2">
-                    {user.hasPassword && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => openDialog(user, "password")}
-                      >
-                        Reset Password
-                      </Button>
-                    )}
-                    {!user.providers.includes("discord") && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => openDialog(user, "email")}
-                      >
-                        Change Email
-                      </Button>
-                    )}
                     {isSuperAdmin && user.role !== "SUPER_ADMIN" && (
                       <Button
                         size="sm"
@@ -333,58 +265,6 @@ export default function AdminPage() {
         </CardContent>
       </Card>
 
-      {/* Reset Password / Change Email Dialog */}
-      <Dialog
-        open={dialogType !== null}
-        onOpenChange={(open) => {
-          if (!open) setDialogType(null);
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {dialogType === "password" ? "Reset Password" : "Change Email"}
-            </DialogTitle>
-            <DialogDescription>
-              {dialogType === "password"
-                ? `Set a new password for ${selectedUser?.name || selectedUser?.email}`
-                : `Change email for ${selectedUser?.name || selectedUser?.email}`}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2 py-4">
-            <Label htmlFor="dialogInput">
-              {dialogType === "password" ? "New Password" : "New Email"}
-            </Label>
-            <Input
-              id="dialogInput"
-              type={dialogType === "password" ? "password" : "email"}
-              value={dialogValue}
-              onChange={(e) => setDialogValue(e.target.value)}
-              placeholder={
-                dialogType === "password"
-                  ? "Enter new password (min 6 chars)"
-                  : "Enter new email address"
-              }
-              minLength={dialogType === "password" ? 6 : undefined}
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogType(null)}>
-              Cancel
-            </Button>
-            <Button
-              disabled={
-                submitting ||
-                (dialogType === "password" && dialogValue.length < 6) ||
-                (dialogType === "email" && !dialogValue.includes("@"))
-              }
-              onClick={handleDialogSubmit}
-            >
-              {submitting ? "Saving..." : "Save"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

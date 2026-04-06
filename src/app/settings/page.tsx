@@ -37,12 +37,6 @@ export default function SettingsPage() {
   const [image, setImage] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
 
-  // Password form
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [savingPassword, setSavingPassword] = useState(false);
-
   // Delete account
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const [deleting, setDeleting] = useState(false);
@@ -82,28 +76,6 @@ export default function SettingsPage() {
       await updateSession();
     }
     setSavingProfile(false);
-  };
-
-  const handleChangePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSavingPassword(true);
-
-    const res = await fetch("/api/account/password", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ currentPassword, newPassword, confirmPassword }),
-    });
-
-    const data = await res.json();
-    if (!res.ok) {
-      toast.error(data.error);
-    } else {
-      toast.success("Password changed");
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-    }
-    setSavingPassword(false);
   };
 
   const handleDeleteAccount = async () => {
@@ -198,60 +170,6 @@ export default function SettingsPage() {
                 </Button>
               </div>
             </form>
-          </CardContent>
-        </Card>
-
-        {/* Password Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Password</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {account.hasPassword ? (
-              <form onSubmit={handleChangePassword} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="currentPassword">Current Password</Label>
-                  <Input
-                    id="currentPassword"
-                    type="password"
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="newPassword">New Password</Label>
-                  <Input
-                    id="newPassword"
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    minLength={6}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    minLength={6}
-                    required
-                  />
-                </div>
-                <div className="flex justify-end">
-                  <Button type="submit" disabled={savingPassword}>
-                    {savingPassword ? "Changing..." : "Change Password"}
-                  </Button>
-                </div>
-              </form>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                You signed in with {account.providers.join(", ")}. Password management is not available for OAuth accounts.
-              </p>
-            )}
           </CardContent>
         </Card>
 

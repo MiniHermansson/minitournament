@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin-utils";
 import { z } from "zod";
@@ -35,7 +34,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Tournament must be in REGISTRATION status" }, { status: 400 });
     }
 
-    const hashedPassword = await bcrypt.hash("testpass123", 12);
     const created: { id: string; name: string; email: string }[] = [];
     let signedUp = 0;
 
@@ -47,7 +45,7 @@ export async function POST(req: Request) {
       let user = await prisma.user.findUnique({ where: { email } });
       if (!user) {
         user = await prisma.user.create({
-          data: { name, email, password: hashedPassword },
+          data: { name, email },
         });
         created.push({ id: user.id, name: user.name!, email: user.email });
       }
