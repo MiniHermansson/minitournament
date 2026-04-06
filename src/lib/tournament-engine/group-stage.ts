@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { generateRoundRobinSchedule } from "@/lib/tournament-utils";
 import type { TournamentEngine, GenerateOptions, SubmitResultOptions, Standing, TeamWithSeed } from "./types";
 import { SingleEliminationEngine } from "./single-elimination";
+import { DoubleEliminationEngine } from "./double-elimination";
 
 export class GroupStageEngine implements TournamentEngine {
   private withPlayoff: boolean;
@@ -218,6 +219,7 @@ export class GroupStageEngine implements TournamentEngine {
     const config = (tournament.formatConfig as Record<string, unknown>) ?? {};
     const advancingPerGroup = (config.advancingPerGroup as number) ?? 2;
     const playoffBestOf = (config.playoffBestOf as number) ?? 1;
+    const playoffFormat = (config.playoffFormat as string) ?? "SINGLE_ELIMINATION";
 
     const standings = await this.getStandings(tournamentId);
 
@@ -250,8 +252,11 @@ export class GroupStageEngine implements TournamentEngine {
       throw new Error("Not enough teams advancing to create a playoff");
     }
 
-    // Generate single elimination bracket with advancing teams
-    const engine = new SingleEliminationEngine();
+    // Generate playoff bracket with advancing teams
+    const engine =
+      playoffFormat === "DOUBLE_ELIMINATION"
+        ? new DoubleEliminationEngine()
+        : new SingleEliminationEngine();
     await engine.generate({
       tournamentId,
       teams: advancingTeams,

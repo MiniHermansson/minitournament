@@ -24,6 +24,9 @@ const groupStageConfig = z.object({
 const groupStagePlayoffConfig = groupStageConfig.extend({
   advancingPerGroup: z.number().int().min(1).max(8).default(2),
   playoffBestOf: z.enum(["1", "3", "5"]).transform(Number),
+  playoffFormat: z
+    .enum(["SINGLE_ELIMINATION", "DOUBLE_ELIMINATION"])
+    .default("SINGLE_ELIMINATION"),
 });
 
 export const formatConfigSchemas: Record<string, z.ZodType> = {

@@ -41,6 +41,7 @@ export default function AdminCreateTournamentPage() {
   const [groupCount, setGroupCount] = useState(4);
   const [advancingPerGroup, setAdvancingPerGroup] = useState(2);
   const [playoffBestOf, setPlayoffBestOf] = useState("1");
+  const [playoffFormat, setPlayoffFormat] = useState("SINGLE_ELIMINATION");
 
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -61,6 +62,7 @@ export default function AdminCreateTournamentPage() {
     if (format === "GROUP_STAGE_PLAYOFF") {
       config.advancingPerGroup = advancingPerGroup;
       config.playoffBestOf = Number(playoffBestOf);
+      config.playoffFormat = playoffFormat;
     }
     return config;
   }
@@ -256,6 +258,13 @@ export default function AdminCreateTournamentPage() {
                       <option value="1">Best of 1</option>
                       <option value="3">Best of 3</option>
                       <option value="5">Best of 5</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="playoff-format">Playoff Format</Label>
+                    <select id="playoff-format" value={playoffFormat} onChange={(e) => setPlayoffFormat(e.target.value)} className="flex h-8 w-full rounded-lg border border-input bg-background px-3 text-sm">
+                      <option value="SINGLE_ELIMINATION">Single Elimination</option>
+                      <option value="DOUBLE_ELIMINATION">Double Elimination</option>
                     </select>
                   </div>
                 </>
