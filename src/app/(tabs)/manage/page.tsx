@@ -41,7 +41,7 @@ interface TournamentData {
   teamMode: string;
   organizerId: string;
   coOrganizerId: string | null;
-  coOrganizer: { id: string; name: string | null; email: string } | null;
+  coOrganizer: { id: string; name: string | null; discordUsername: string } | null;
   maxTeams: number;
   registrations: Registration[];
   playerSignups: PlayerSignup[];
@@ -105,7 +105,7 @@ export default function ManageTournamentPage() {
   const [generating, setGenerating] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [archiving, setArchiving] = useState(false);
-  const [coOrgEmail, setCoOrgEmail] = useState("");
+  const [coOrgDiscord, setCoOrgDiscord] = useState("");
   const [coOrgSaving, setCoOrgSaving] = useState(false);
   const [coOrgError, setCoOrgError] = useState("");
   const [ranks, setRanks] = useState<Record<string, RankInfo | null>>({});
@@ -224,10 +224,10 @@ export default function ManageTournamentPage() {
     const res = await fetch("/api/tournament", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ coOrganizerEmail: coOrgEmail || null }),
+      body: JSON.stringify({ coOrganizerDiscord: coOrgDiscord || null }),
     });
     if (res.ok) {
-      setCoOrgEmail("");
+      setCoOrgDiscord("");
       fetchTournament();
     } else {
       const data = await res.json();
@@ -613,13 +613,13 @@ export default function ManageTournamentPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium">{tournament.coOrganizer.name}</p>
-                <p className="text-xs text-muted-foreground">{tournament.coOrganizer.email}</p>
+                <p className="text-xs text-muted-foreground">{tournament.coOrganizer.discordUsername}</p>
               </div>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  setCoOrgEmail("");
+                  setCoOrgDiscord("");
                   handleSaveCoOrganizer();
                 }}
               >
@@ -630,14 +630,14 @@ export default function ManageTournamentPage() {
             <div className="space-y-3">
               <div className="flex gap-2">
                 <Input
-                  placeholder="co-organizer@email.com"
-                  type="email"
-                  value={coOrgEmail}
-                  onChange={(e) => setCoOrgEmail(e.target.value)}
+                  placeholder="Discord username"
+                  type="text"
+                  value={coOrgDiscord}
+                  onChange={(e) => setCoOrgDiscord(e.target.value)}
                 />
                 <Button
                   onClick={handleSaveCoOrganizer}
-                  disabled={coOrgSaving || !coOrgEmail.trim()}
+                  disabled={coOrgSaving || !coOrgDiscord.trim()}
                 >
                   {coOrgSaving ? "Saving..." : "Add"}
                 </Button>

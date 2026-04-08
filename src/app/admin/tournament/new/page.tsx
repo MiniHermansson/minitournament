@@ -31,7 +31,7 @@ export default function AdminCreateTournamentPage() {
   const [description, setDescription] = useState("");
   const [format, setFormat] = useState("SINGLE_ELIMINATION");
   const [teamMode, setTeamMode] = useState("PRE_MADE");
-  const [coOrganizerEmail, setCoOrganizerEmail] = useState("");
+  const [coOrganizerDiscord, setCoOrganizerDiscord] = useState("");
 
   const [maxTeams, setMaxTeams] = useState(16);
   const [minTeams, setMinTeams] = useState(2);
@@ -79,7 +79,7 @@ export default function AdminCreateTournamentPage() {
         description: description || undefined,
         format,
         teamMode,
-        coOrganizerEmail: coOrganizerEmail || undefined,
+        coOrganizerDiscord: coOrganizerDiscord || undefined,
         maxTeams,
         minTeams,
         teamSize,
@@ -193,13 +193,13 @@ export default function AdminCreateTournamentPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="co-org">Co-Organizer Email (optional)</Label>
+                <Label htmlFor="co-org">Co-Organizer Discord Username (optional)</Label>
                 <Input
                   id="co-org"
-                  type="email"
-                  placeholder="co-organizer@email.com"
-                  value={coOrganizerEmail}
-                  onChange={(e) => setCoOrganizerEmail(e.target.value)}
+                  type="text"
+                  placeholder="Discord username"
+                  value={coOrganizerDiscord}
+                  onChange={(e) => setCoOrganizerDiscord(e.target.value)}
                 />
               </div>
 

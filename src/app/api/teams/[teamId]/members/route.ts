@@ -27,12 +27,12 @@ export async function POST(
     const data = addMemberSchema.parse(body);
 
     const user = await prisma.user.findUnique({
-      where: { email: data.email },
+      where: { discordUsername: data.discordUsername },
     });
 
     if (!user) {
       return NextResponse.json(
-        { error: "No user found with that email" },
+        { error: "No user found with that Discord username" },
         { status: 404 }
       );
     }
@@ -57,7 +57,7 @@ export async function POST(
         isPrimary: data.role !== "SUBSTITUTE",
       },
       include: {
-        user: { select: { id: true, name: true, image: true, email: true } },
+        user: { select: { id: true, name: true, image: true } },
       },
     });
 

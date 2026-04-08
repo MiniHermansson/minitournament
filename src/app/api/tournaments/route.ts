@@ -56,9 +56,9 @@ export async function POST(req: Request) {
     const data = createTournamentSchema.parse(body);
 
     let coOrganizerId: string | null = null;
-    if (body.coOrganizerEmail) {
+    if (body.coOrganizerDiscord) {
       const coOrg = await prisma.user.findUnique({
-        where: { email: body.coOrganizerEmail },
+        where: { discordUsername: body.coOrganizerDiscord },
       });
       if (!coOrg) {
         return NextResponse.json({ error: "Co-organizer user not found" }, { status: 404 });

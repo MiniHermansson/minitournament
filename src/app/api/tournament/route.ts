@@ -17,7 +17,7 @@ export async function GET() {
     where: { id: tournamentId },
     include: {
       organizer: { select: { id: true, name: true, image: true } },
-      coOrganizer: { select: { id: true, name: true, image: true, email: true } },
+      coOrganizer: { select: { id: true, name: true, image: true, discordUsername: true } },
       registrations: {
         include: {
           team: {
@@ -89,11 +89,11 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ tournament: updated });
     }
 
-    if ("coOrganizerEmail" in body) {
+    if ("coOrganizerDiscord" in body) {
       let coOrganizerId: string | null = null;
-      if (body.coOrganizerEmail) {
+      if (body.coOrganizerDiscord) {
         const coOrg = await prisma.user.findUnique({
-          where: { email: body.coOrganizerEmail },
+          where: { discordUsername: body.coOrganizerDiscord },
         });
         if (!coOrg) {
           return NextResponse.json({ error: "Co-organizer user not found" }, { status: 404 });

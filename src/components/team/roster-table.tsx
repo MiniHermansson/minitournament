@@ -20,7 +20,6 @@ interface Member {
     id: string;
     name: string | null;
     image: string | null;
-    email: string;
   };
 }
 
@@ -64,7 +63,7 @@ export function RosterTable({ members, isOwner, onRemove }: RosterTableProps) {
                   </AvatarFallback>
                 </Avatar>
                 <span className="text-sm font-medium">
-                  {member.user.name ?? member.user.email}
+                  {member.user.name ?? "Unknown"}
                 </span>
               </div>
             </TableCell>

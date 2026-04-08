@@ -20,7 +20,7 @@ interface AddMemberFormProps {
 }
 
 export function AddMemberForm({ teamId, onAdded }: AddMemberFormProps) {
-  const [email, setEmail] = useState("");
+  const [discordUsername, setDiscordUsername] = useState("");
   const [role, setRole] = useState("TOP");
   const [summonerName, setSummonerName] = useState("");
   const [error, setError] = useState("");
@@ -34,7 +34,7 @@ export function AddMemberForm({ teamId, onAdded }: AddMemberFormProps) {
     const res = await fetch(`/api/teams/${teamId}/members`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, role, summonerName: summonerName || undefined }),
+      body: JSON.stringify({ discordUsername, role, summonerName: summonerName || undefined }),
     });
 
     const data = await res.json();
@@ -45,7 +45,7 @@ export function AddMemberForm({ teamId, onAdded }: AddMemberFormProps) {
       return;
     }
 
-    setEmail("");
+    setDiscordUsername("");
     setSummonerName("");
     setLoading(false);
     onAdded();
@@ -55,13 +55,13 @@ export function AddMemberForm({ teamId, onAdded }: AddMemberFormProps) {
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="member-email">Player Email</Label>
+          <Label htmlFor="member-discord">Discord Username</Label>
           <Input
-            id="member-email"
-            type="email"
-            placeholder="player@example.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            id="member-discord"
+            type="text"
+            placeholder="username"
+            value={discordUsername}
+            onChange={(e) => setDiscordUsername(e.target.value)}
             required
           />
         </div>

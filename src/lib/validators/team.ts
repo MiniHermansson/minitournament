@@ -13,7 +13,7 @@ export const createTeamSchema = z.object({
 export const updateTeamSchema = createTeamSchema.partial();
 
 export const addMemberSchema = z.object({
-  email: z.string().email("Invalid email address"),
+  discordUsername: z.string().min(1, "Discord username is required"),
   role: z.enum(["TOP", "JUNGLE", "MID", "ADC", "SUPPORT", "SUBSTITUTE"]),
   summonerName: z.string().optional(),
 });

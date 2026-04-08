@@ -26,7 +26,6 @@ interface TeamData {
       id: string;
       name: string | null;
       image: string | null;
-      email: string;
     };
   }>;
 }

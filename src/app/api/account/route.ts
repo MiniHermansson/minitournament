@@ -23,9 +23,7 @@ export async function GET() {
     user: {
       id: user.id,
       name: user.name,
-      email: user.email,
       image: user.image,
-      hasPassword: !!user.password,
       providers: user.accounts.map((a) => a.provider),
     },
   });
@@ -45,7 +43,7 @@ export async function PATCH(req: Request) {
         name: data.name,
         image: data.image === "" ? null : data.image,
       },
-      select: { id: true, name: true, email: true, image: true },
+      select: { id: true, name: true, image: true },
     });
 
     return NextResponse.json({ user });

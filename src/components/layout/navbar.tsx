@@ -95,9 +95,6 @@ export function Navbar() {
                 <div className="flex items-center gap-2 p-2">
                   <div className="flex flex-col space-y-1 leading-none">
                     <p className="font-medium">{session.user.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {session.user.email}
-                    </p>
                   </div>
                 </div>
                 <DropdownMenuSeparator />

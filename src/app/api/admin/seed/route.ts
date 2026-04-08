@@ -34,20 +34,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Tournament must be in REGISTRATION status" }, { status: 400 });
     }
 
-    const created: { id: string; name: string; email: string }[] = [];
+    const created: { id: string; name: string; discordUsername: string }[] = [];
     let signedUp = 0;
 
     for (let i = 1; i <= count; i++) {
-      const email = `testplayer${i}@test.local`;
+      const discordUsername = `testplayer${i}`;
       const name = `Test Player ${i}`;
 
       // Create user if not exists
-      let user = await prisma.user.findUnique({ where: { email } });
+      let user = await prisma.user.findFirst({ where: { discordUsername } });
       if (!user) {
         user = await prisma.user.create({
-          data: { name, email },
+          data: { name, discordUsername },
         });
-        created.push({ id: user.id, name: user.name!, email: user.email });
+        created.push({ id: user.id, name: user.name!, discordUsername: user.discordUsername });
       }
 
       // Sign up for tournament if not already signed up

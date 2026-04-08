@@ -10,6 +10,19 @@ export const authOptions: NextAuthOptions = {
     DiscordProvider({
       clientId: process.env.DISCORD_CLIENT_ID!,
       clientSecret: process.env.DISCORD_CLIENT_SECRET!,
+      authorization: {
+        params: { prompt: "none" },
+      },
+      profile(profile) {
+        return {
+          id: profile.id,
+          name: profile.global_name ?? profile.username,
+          image: profile.avatar
+            ? `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.png`
+            : null,
+          discordUsername: profile.username,
+        };
+      },
     }),
   ],
   session: {
@@ -19,6 +32,13 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user, account, trigger }) {
       if (account && user) {
         token.id = user.id;
+        // Update discordUsername on every login (handles backfill for existing users)
+        await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            discordUsername: (user as Record<string, unknown>).discordUsername as string,
+          },
+        });
         const dbUser = await prisma.user.findUnique({
           where: { id: user.id },
           select: { role: true },
@@ -35,12 +55,11 @@ export const authOptions: NextAuthOptions = {
       if (trigger === "update" && token.id) {
         const freshUser = await prisma.user.findUnique({
           where: { id: token.id as string },
-          select: { name: true, image: true, email: true, role: true },
+          select: { name: true, image: true, role: true },
         });
         if (freshUser) {
           token.name = freshUser.name;
           token.picture = freshUser.image;
-          token.email = freshUser.email;
           token.role = freshUser.role;
         }
       }

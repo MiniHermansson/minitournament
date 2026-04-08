@@ -14,11 +14,10 @@ import { Badge } from "@/components/ui/badge";
 interface UserData {
   id: string;
   name: string | null;
-  email: string;
+  discordUsername: string;
   role: string;
   image: string | null;
   createdAt: string;
-  hasPassword: boolean;
   providers: string[];
 }
 
@@ -102,7 +101,7 @@ export default function AdminPage() {
     if (!res.ok) {
       toast.error(data.error);
     } else {
-      toast.success(`${user.name || user.email} is now ${newRole}`);
+      toast.success(`${user.name || user.discordUsername} is now ${newRole}`);
       fetchUsers();
     }
   };
@@ -181,7 +180,7 @@ export default function AdminPage() {
         <Input
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
-          placeholder="Search by name or email..."
+          placeholder="Search by name or Discord username..."
           className="flex-1"
         />
         <Button type="submit">Search</Button>
@@ -228,7 +227,7 @@ export default function AdminPage() {
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground truncate">
-                      {user.email}
+                      {user.discordUsername}
                     </p>
                     <div className="flex gap-2 mt-1">
                       {user.providers.map((p) => (
@@ -239,11 +238,6 @@ export default function AdminPage() {
                           {p}
                         </span>
                       ))}
-                      {user.hasPassword && (
-                        <span className="text-xs bg-muted px-1.5 py-0.5 rounded">
-                          credentials
-                        </span>
-                      )}
                     </div>
                   </div>
 
